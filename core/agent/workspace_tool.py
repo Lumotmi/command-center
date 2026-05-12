@@ -81,6 +81,17 @@ def list_tasks(show_done: bool = False) -> str:
     return "\n".join(lines)
 
 
+def list_open_tasks() -> str:
+    tasks = _get("/tasks", {"done": "false"})["tasks"]
+    if not tasks:
+        return "No open tasks."
+    lines = [f"Open tasks ({len(tasks)}):"]
+    for t in tasks:
+        prio = f"[{t['priority'].upper()}]" if t.get("priority") else ""
+        lines.append(f"  ⬜ #{t['id']} {prio} {t['text']} ({t.get('tag', '')})")
+    return "\n".join(lines)
+
+
 # ── Team ──────────────────────────────────────────────────────────────────────
 
 def update_health(member: str, health: int, note: str = None) -> str:
@@ -89,6 +100,15 @@ def update_health(member: str, health: int, note: str = None) -> str:
         body["notes"] = note
     m = _patch(f"/team/{member}", body)
     return f"Updated {m['name']} health to {health}/10"
+
+
+def update_team_health(member: str, health: int, note: str = None) -> str:
+    body = {"health": max(1, min(10, int(health)))}
+    if note:
+        body["notes"] = note
+    m = _patch(f"/team/{member}", body)
+    note_str = f" — note saved" if note else ""
+    return f"Updated {m['name']} health to {health}/10{note_str}"
 
 
 def add_member_note(member: str, note: str) -> str:
@@ -109,6 +129,11 @@ def get_team_status() -> str:
 
 
 # ── SPOC log ──────────────────────────────────────────────────────────────────
+
+def log_spoc_note(title: str, body: str, status: str = "open") -> str:
+    entry = _post("/spoc", {"title": title, "body": body, "status": status, "kws": []})
+    return f"SPOC note #{entry['id']} logged: {title} [{status}]"
+
 
 def add_spoc_log(title: str, body: str, status: str = "open", keywords: list = None) -> str:
     entry = _post("/spoc", {
@@ -136,6 +161,11 @@ def get_spoc_summary() -> str:
 
 
 # ── Projects ──────────────────────────────────────────────────────────────────
+
+def add_blocker(project_id: str, blocker: str) -> str:
+    p = _patch(f"/projects/{project_id}", {"notes": f"BLOCKER: {blocker}"})
+    return f"Blocker added to '{p['name']}': {blocker}"
+
 
 def update_project(project_id: str, status: str = None, progress: int = None, note: str = None) -> str:
     body = {}
@@ -294,33 +324,67 @@ def get_status() -> str:
     )
 
 
+# ── Action schema (consumed by GET /api/agent/actions) ───────────────────────
+
+ACTIONS = [
+    {"action": "add_task",           "required": ["text"],                       "optional": ["tag", "priority"],          "description": "Add a new task"},
+    {"action": "complete_task",      "required": [],                             "optional": ["task_id", "text_match"],    "description": "Mark a task done by ID or fuzzy text match"},
+    {"action": "list_open_tasks",    "required": [],                             "optional": [],                           "description": "List all open tasks"},
+    {"action": "list_tasks",         "required": [],                             "optional": ["show_done"],                "description": "List tasks, optionally including completed"},
+    {"action": "delete_task",        "required": ["task_id"],                    "optional": [],                           "description": "Delete a task by ID"},
+    {"action": "update_team_health", "required": ["member", "health"],           "optional": ["note"],                     "description": "Set a team member's health score (1–10) with optional note"},
+    {"action": "update_health",      "required": ["member", "health"],           "optional": ["note"],                     "description": "Alias for update_team_health"},
+    {"action": "add_member_note",    "required": ["member", "note"],             "optional": [],                           "description": "Append a note to a team member's record"},
+    {"action": "get_team_status",    "required": [],                             "optional": [],                           "description": "Show all team members with health scores"},
+    {"action": "log_spoc_note",      "required": ["title", "body"],              "optional": ["status"],                   "description": "Log a new SPOC communication entry (status defaults to open)"},
+    {"action": "add_spoc_log",       "required": ["title", "body"],              "optional": ["status", "keywords"],       "description": "Log a SPOC entry with optional keywords"},
+    {"action": "update_spoc_status", "required": ["entry_id", "status"],         "optional": [],                           "description": "Update a SPOC entry status: open | urgent | done"},
+    {"action": "get_spoc_summary",   "required": [],                             "optional": [],                           "description": "Show all SPOC log entries"},
+    {"action": "add_blocker",        "required": ["project_id", "blocker"],      "optional": [],                           "description": "Prepend a BLOCKER note to a project"},
+    {"action": "update_project",     "required": ["project_id"],                 "optional": ["status", "progress", "note"], "description": "Update project status, progress %, or add a note"},
+    {"action": "update_milestone",   "required": ["project_id", "milestone_text", "status"], "optional": [],              "description": "Set a milestone status: done | active | pending | blocked"},
+    {"action": "get_project_summary","required": [],                             "optional": [],                           "description": "Show all projects with status and progress bars"},
+    {"action": "schedule_reminder",  "required": ["message", "send_at"],         "optional": ["channel"],                  "description": "Schedule a reminder (send_at: ISO 8601 datetime)"},
+    {"action": "save_weekly_entry",  "required": ["entry_type", "content"],      "optional": ["week"],                     "description": "Save a weekly rhythm entry: friday | monday | summary"},
+    {"action": "send_telegram",      "required": ["message"],                    "optional": [],                           "description": "Send a message via Telegram"},
+    {"action": "send_email",         "required": ["subject", "body"],            "optional": [],                           "description": "Send an email via Resend"},
+    {"action": "get_daily_briefing", "required": [],                             "optional": [],                           "description": "Full daily briefing: tasks, SPOC, projects, team"},
+    {"action": "get_status",         "required": [],                             "optional": [],                           "description": "One-line workspace status summary"},
+]
+
+
 # ── Dispatcher ────────────────────────────────────────────────────────────────
 
 def run(action: str, **kwargs) -> str:
     dispatch = {
-        "add_task": add_task,
-        "complete_task": complete_task,
-        "delete_task": delete_task,
-        "list_tasks": list_tasks,
-        "update_health": update_health,
-        "add_member_note": add_member_note,
-        "get_team_status": get_team_status,
-        "add_spoc_log": add_spoc_log,
-        "update_spoc_status": update_spoc_status,
-        "get_spoc_summary": get_spoc_summary,
-        "update_project": update_project,
-        "update_milestone": update_milestone,
+        "add_task":            add_task,
+        "complete_task":       complete_task,
+        "list_open_tasks":     list_open_tasks,
+        "list_tasks":          list_tasks,
+        "delete_task":         delete_task,
+        "update_team_health":  update_team_health,
+        "update_health":       update_health,
+        "add_member_note":     add_member_note,
+        "get_team_status":     get_team_status,
+        "log_spoc_note":       log_spoc_note,
+        "add_spoc_log":        add_spoc_log,
+        "update_spoc_status":  update_spoc_status,
+        "get_spoc_summary":    get_spoc_summary,
+        "add_blocker":         add_blocker,
+        "update_project":      update_project,
+        "update_milestone":    update_milestone,
         "get_project_summary": get_project_summary,
-        "send_telegram": send_telegram,
-        "send_email": send_email,
-        "get_daily_briefing": get_daily_briefing,
-        "schedule_reminder": schedule_reminder,
-        "save_weekly_entry": save_weekly_entry,
-        "get_status": get_status,
+        "send_telegram":       send_telegram,
+        "send_email":          send_email,
+        "get_daily_briefing":  get_daily_briefing,
+        "schedule_reminder":   schedule_reminder,
+        "save_weekly_entry":   save_weekly_entry,
+        "get_status":          get_status,
     }
     fn = dispatch.get(action)
     if fn is None:
-        return f"Unknown action '{action}'. Available: {', '.join(dispatch)}"
+        available = ", ".join(sorted(dispatch))
+        return f"Unknown action '{action}'. Available: {available}"
     return fn(**kwargs)
 
 

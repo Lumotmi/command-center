@@ -381,6 +381,13 @@ def create_weekly():
 
 # ── Agent ─────────────────────────────────────────────────────────────────────
 
+@app.route("/api/agent/actions")
+def agent_actions():
+    if workspace_tool is None:
+        return _err("workspace_tool not available — check sys.path", 500)
+    return jsonify({"actions": getattr(workspace_tool, "ACTIONS", [])})
+
+
 @app.route("/api/agent", methods=["POST"])
 def agent():
     if workspace_tool is None:
