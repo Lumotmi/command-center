@@ -196,8 +196,6 @@ const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov',
 document.getElementById('topDate').textContent=`${days[now.getDay()].slice(0,3).toUpperCase()} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
 const h=now.getHours();
 document.getElementById('heroT').innerHTML=`GOOD<br><span>${h<12?'MORNING':h<17?'AFTERNOON':'EVENING'}</span>`;
-const rLabels=['—','Outlook','Focus','Midweek','Prep','Lookback','—'];
-document.getElementById('rhythmB').textContent=rLabels[now.getDay()];
 
 const wDays=[{n:'Mon',l:'Outlook',s:true},{n:'Tue',l:'—'},{n:'Wed',l:'—'},{n:'Thu',l:'—'},{n:'Fri',l:'Lookback',s:true}];
 const wr=document.getElementById('weekRow');
@@ -209,7 +207,7 @@ wDays.forEach((d,i)=>{
   wr.appendChild(div);
 });
 
-let tasks=[];
+let tasks=[], spaces=[];
 function render(){
   const list=document.getElementById('taskList');list.innerHTML='';
   if(!tasks.length){list.innerHTML='<div class="t-item" style="color:var(--ink-3);font-size:10px;justify-content:center;">No open tasks</div>';document.getElementById('statT').textContent='0';return;}
@@ -224,6 +222,34 @@ async function addTask(){const v=document.getElementById('taskIn').value.trim();
 async function tog(id){const t=tasks.find(x=>x.id===id);if(!t)return;try{await API.updateTask(id,{done:!t.done});await loadData();}catch(e){console.error(e);}}
 async function del(id){try{await API.deleteTask(id);await loadData();}catch(e){console.error(e);}}
 function setBadge(id,text,red){const el=document.getElementById(id);if(!el)return;el.textContent=text;el.className=red?'badge red':'badge';}
+
+function applyBadge(id,count){
+  const el=document.getElementById(id);if(!el)return;
+  if(count===0){el.style.display='none';}
+  else{el.style.display='';el.textContent=count;el.className='badge red';}
+}
+
+async function refreshBadges(){
+  if(!spaces.length)return;
+  try{
+    const [tasksData,spocData,teamData,projectsData,remindersData]=await Promise.all([
+      API.getTasks(false),API.getSpoc(),API.getTeam(),API.getProjects(),API.getReminders()
+    ]);
+    const projs=projectsData.projects||[];
+    const counts={
+      tasks:(tasksData.tasks||[]).length,
+      spoc:(spocData.spoc_log||[]).filter(e=>e.status!=='done').length,
+      team:(teamData.team||[]).filter(m=>m.health<7).length,
+      projects:projs.filter(p=>p.status==='blocked'||p.status==='atrisk').length,
+      crm:projs.filter(p=>p.id==='hubspot'&&(p.status==='atrisk'||p.status==='blocked')).length,
+      rhythm:(remindersData.reminders||[]).filter(r=>!r.sent).length
+    };
+    spaces.forEach(sp=>{
+      if(!sp.badge_id||!(sp.id in counts))return;
+      applyBadge(sp.badge_id,counts[sp.id]);
+    });
+  }catch(e){console.error('Badge refresh error:',e);}
+}
 
 function buildSpaceRows(spaces){
   const container=document.getElementById('spaceRows');
@@ -245,42 +271,25 @@ function buildSpaceRows(spaces){
 
 async function loadData(){
   try{
-    const [tasksData,spocData,teamData,projectsData,cfgData]=await Promise.all([API.getTasks(false),API.getSpoc(),API.getTeam(),API.getProjects(),API.getConfig()]);
+    const [tasksData,teamData,projectsData,cfgData]=await Promise.all([API.getTasks(false),API.getTeam(),API.getProjects(),API.getConfig()]);
     tasks=tasksData.tasks||[];
     const team=teamData.team||[];
     const projects=projectsData.projects||[];
-    const spoc=spocData.spoc_log||[];
     const cfg=cfgData||{};
-    const today=new Date();
     if(cfg.org){document.getElementById('orgEyebrow').textContent=`${cfg.org} — ${cfg.org_subtitle||'Personal OS'}`;}
     if(cfg.ollama_base)OLLAMA_BASE=cfg.ollama_base;
-    if(cfg.spaces)buildSpaceRows(cfg.spaces);
+    spaces=cfg.spaces||[];
+    if(cfg.spaces){buildSpaceRows(cfg.spaces);refreshBadges();}
     document.getElementById('statMembers').textContent=team.length||'—';
     const active=projects.filter(p=>p.status!=='done');
     const blocked=projects.filter(p=>p.status==='blocked');
     document.getElementById('statProjects').textContent=active.length;
     document.getElementById('statBlocked').textContent=blocked.length;
     document.getElementById('statBlocked').className=blocked.length?'hst-v r':'hst-v';
-    const urgent=spoc.filter(e=>e.status==='urgent').length;
-    const open=spoc.filter(e=>e.status==='open').length;
-    if(urgent>0)setBadge('badgeSpoc',urgent+' Urgent',true);
-    else if(open>0)setBadge('badgeSpoc',open+' Open',false);
-    else setBadge('badgeSpoc','All clear',false);
     const teamSub=document.getElementById('teamSub');
     if(teamSub)teamSub.textContent=team.length+' Direct Reports';
-    const needAttention=team.filter(m=>{if(m.health<=6)return true;if(m.lastCheck){const d=(today-new Date(m.lastCheck))/(1000*60*60*24);if(d>7)return true;}return false;});
-    if(needAttention.length>0)setBadge('badgeTeam',needAttention.length+' Need attention',true);
-    else setBadge('badgeTeam','All good',false);
-    if(blocked.length>0)setBadge('badgeProjects',blocked.length+' Blocked',true);
-    else if(active.length>0)setBadge('badgeProjects',active.length+' Active',false);
-    else setBadge('badgeProjects','All done',false);
-    const crm=projects.find(p=>p.id==='hubspot');
-    if(crm){const statusMap={ontrack:'On track',atrisk:'At risk',blocked:'Blocked',done:'Done'};setBadge('badgeCrm',statusMap[crm.status]||crm.status,crm.status==='atrisk'||crm.status==='blocked');}
     hideOfflineBanner();
   }catch(e){showOfflineBanner();console.error('API error:',e);}
-  const day=new Date().getDay();
-  const rhythmEl=document.getElementById('rhythmB');
-  if(rhythmEl){if(day===5){rhythmEl.textContent='Friday lookback';rhythmEl.className='badge red';}else if(day===1){rhythmEl.textContent='Monday outlook';rhythmEl.className='badge red';}else{rhythmEl.textContent='Weekly';rhythmEl.className='badge';}}
   render();
 }
 document.getElementById('taskList').innerHTML='<div class="t-item" style="color:var(--ink-3);font-size:10px;justify-content:center;">Loading...</div>';
@@ -374,8 +383,10 @@ function safeJSON(raw){
 }
 
 // Init on page load
-document.addEventListener('DOMContentLoaded', updateModelUI);
-// Also init immediately in case DOMContentLoaded already fired
+document.addEventListener('DOMContentLoaded', ()=>{
+  updateModelUI();
+  setInterval(refreshBadges, 60000);
+});
 updateModelUI();
 
 </script>
