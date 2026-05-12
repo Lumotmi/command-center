@@ -2,16 +2,18 @@
 """Command Center REST API — single read/write interface for data.json."""
 
 import json
+import os
 import sys
 from datetime import datetime, date
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-DATA_FILE = Path.home() / "workspace" / "data.json"
-AUDIT_LOG  = Path.home() / "workspace" / "audit.log"
+DATA_FILE     = Path.home() / "workspace" / "data.json"
+AUDIT_LOG     = Path.home() / "workspace" / "audit.log"
+DASHBOARD_DIR = Path(__file__).resolve().parent.parent.parent / "dashboard"
 
 # ── workspace_tool import (works from core/api/ or ~/workspace/) ───────────────
 for _p in [
@@ -64,6 +66,23 @@ def _today() -> str:
 
 def _next_id(items: list) -> int:
     return max((item["id"] for item in items), default=0) + 1
+
+
+# ── Dashboard static files ────────────────────────────────────────────────────
+
+@app.route("/")
+def index():
+    return send_from_directory(DASHBOARD_DIR, "command-center.html")
+
+
+@app.route("/dashboard/shared/<path:filename>")
+def shared_static(filename):
+    return send_from_directory(DASHBOARD_DIR / "shared", filename)
+
+
+@app.route("/dashboard/<path:filename>")
+def dashboard_static(filename):
+    return send_from_directory(DASHBOARD_DIR, filename)
 
 
 # ── Status ────────────────────────────────────────────────────────────────────
