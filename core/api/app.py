@@ -383,6 +383,17 @@ def agent():
         return _err(str(e), 500)
 
 
+# ── Dashboard catch-all (serves /*.html and /shared/* from dashboard/) ────────
+
+@app.route("/<path:filename>")
+def root_files(filename):
+    if filename.endswith(".html"):
+        return send_from_directory(DASHBOARD_DIR, filename)
+    if filename.startswith("shared/"):
+        return send_from_directory(DASHBOARD_DIR, filename)
+    return {"error": "endpoint not found"}, 404
+
+
 # ── Error handlers ────────────────────────────────────────────────────────────
 
 @app.errorhandler(404)
