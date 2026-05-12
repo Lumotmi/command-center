@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team Lead — Livesystems AG</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="shared/api.js"></script>
 <style>
 :root{--bg:#f2f0eb;--surface:#fff;--ink:#0e0e0e;--ink-2:#3a3a3a;--ink-3:#888;--ink-4:#bbb;--accent:#d63a2f;--accent-dim:rgba(214,58,47,.1);--border:#d8d4cc;--border-dark:#0e0e0e;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;}
 *{margin:0;padding:0;box-sizing:border-box;}body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
@@ -305,15 +306,18 @@ async function genCheckin(){
   btn.disabled=false;btn.textContent='Generate';
 }
 
-function saveNotes(){
+async function saveNotes(){
   const mId=document.getElementById('notesMember').value;
   const notes=document.getElementById('meetingNotes').value.trim();
   if(!mId||!notes)return;
-  if(!oneOnOne[mId])oneOnOne[mId]=[];
-  oneOnOne[mId].unshift({date:new Date().toISOString().split('T')[0],notes});
-  localStorage.setItem('onone-notes',JSON.stringify(oneOnOne));
-  document.getElementById('meetingNotes').value='';
-  alert('Notes saved.');
+  try{
+    await API.updateMember(mId,{notes});
+    if(!oneOnOne[mId])oneOnOne[mId]=[];
+    oneOnOne[mId].unshift({date:new Date().toISOString().split('T')[0],notes});
+    localStorage.setItem('onone-notes',JSON.stringify(oneOnOne));
+    document.getElementById('meetingNotes').value='';
+    await loadData();
+  }catch(e){console.error(e);alert('Failed to save note.');}
 }
 
 function showHistory(){
@@ -324,20 +328,20 @@ function showHistory(){
   area.innerHTML=hist.length?hist.map(h=>`<div style="margin-top:10px;padding:10px 12px;border:1px solid var(--border);font-size:11px;"><div style="font-family:var(--mono);font-size:9px;color:var(--ink-3);margin-bottom:4px;">${h.date}</div>${h.notes}</div>`).join(''):'<div style="font-size:11px;color:var(--ink-3);margin-top:10px;">No previous notes.</div>';
 }
 
-async function initData(){
+async function loadData(){
   try{
-    const r=await fetch('/data.json?t='+Date.now());
-    const d=await r.json();
+    const d=await API.getTeam();
     team=(d.team||[]).map(m=>({
-      id:m.id, name:m.name, role:m.role,
-      health:m.health||8, lastCheck:m.lastCheck||'',
-      note:(m.notes&&m.notes.length)?m.notes[m.notes.length-1]:''
+      id:m.id,name:m.name,role:m.role,
+      health:m.health||8,lastCheck:m.lastCheck||'',
+      note:(m.notes&&m.notes.length)?m.notes[0]:''
     }));
-  }catch(e){console.warn('data.json unavailable',e);}
+    hideOfflineBanner();
+  }catch(e){showOfflineBanner();console.error('API error:',e);}
   renderMembers();renderRecurring();
 }
-initData();
-setInterval(initData,60000);
+document.getElementById('memberBody').innerHTML='<tr><td colspan="5" style="font-family:var(--mono);font-size:10px;color:var(--ink-3);padding:16px;">Loading...</td></tr>';
+startAutoRefresh(loadData,30000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';

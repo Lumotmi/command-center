@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weekly Rhythm — Livesystems AG</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="shared/api.js"></script>
 <style>
 :root{--bg:#f2f0eb;--surface:#fff;--ink:#0e0e0e;--ink-2:#3a3a3a;--ink-3:#888;--ink-4:#bbb;--accent:#d63a2f;--accent-dim:rgba(214,58,47,.1);--border:#d8d4cc;--border-dark:#0e0e0e;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;}
 *{margin:0;padding:0;box-sizing:border-box;}body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
@@ -272,7 +273,7 @@ const now=new Date();
 const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 document.getElementById('topDate').textContent=`${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
 
-let archive=JSON.parse(localStorage.getItem('weekly-arch')||'null');
+let archive=null;
 
 function setMode(m){
   ['btnFri','btnMon','btnArc'].forEach(id=>document.getElementById(id).classList.remove('active'));
@@ -316,14 +317,16 @@ async function genOutlook(){
   btn.disabled=false;btn.textContent='Generate Monday outlook';
 }
 
-function saveWeek(type){
+async function saveWeek(type){
   const id=type==='friday'?'lookbackFull':'outlookFull';
   const content=document.getElementById(id).textContent;
   if(!content||content==='Generating...')return;
-  archive.unshift({type,date:new Date().toISOString().split('T')[0],preview:content.slice(0,100)+'...',content});
-  if(archive.length>52)archive=archive.slice(0,52);
-  localStorage.setItem('weekly-arch',JSON.stringify(archive));
-  alert('Saved to archive!');
+  const week=new Date().toISOString().split('T')[0];
+  try{
+    await API.addWeekly(type,content,week);
+    await loadArchive();
+    alert('Saved to archive!');
+  }catch(e){console.error(e);alert('Failed to save.');}
 }
 
 function renderArchive(){
@@ -335,17 +338,20 @@ function renderArchive(){
 function clearFriday(){['f-week','f-wins','f-challenges','f-spoc','f-team','f-other'].forEach(id=>document.getElementById(id).value='');document.getElementById('lookbackResult').classList.remove('show');}
 function clearMonday(){['m-week','m-priorities','m-meetings','m-risks','m-spoc','m-success'].forEach(id=>document.getElementById(id).value='');document.getElementById('outlookResult').classList.remove('show');}
 
+async function loadArchive(){
+  try{
+    const d=await API.getWeekly();
+    archive=d.weekly_archive||[];
+    hideOfflineBanner();
+  }catch(e){showOfflineBanner();if(archive===null)archive=[];console.error('API error:',e);}
+  if(document.getElementById('panelArchive').classList.contains('active'))renderArchive();
+}
 async function initData(){
-  if(archive===null){
-    try{
-      const r=await fetch('/data.json?t='+Date.now());
-      const d=await r.json();
-      archive=d.weekly_archive||[];
-    }catch(e){archive=[];}
-  }
+  await loadArchive();
   autoMode();
 }
 initData();
+setInterval(loadArchive,60000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';

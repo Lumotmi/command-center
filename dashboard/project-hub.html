@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Hub — Livesystems AG</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="shared/api.js"></script>
 <style>
 :root{--bg:#f2f0eb;--surface:#fff;--ink:#0e0e0e;--ink-2:#3a3a3a;--ink-3:#888;--ink-4:#bbb;--accent:#d63a2f;--accent-dim:rgba(214,58,47,.1);--border:#d8d4cc;--border-dark:#0e0e0e;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;}
 *{margin:0;padding:0;box-sizing:border-box;}body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
@@ -229,27 +230,23 @@ async function genSummary(){
   btn.disabled=false;btn.textContent='Analyse & summarise';
 }
 
-async function initData(){
+async function loadData(){
   try{
-    const r=await fetch('/data.json?t='+Date.now());
-    const d=await r.json();
+    const d=await API.getProjects();
     projects=(d.projects||[]).map(p=>({
-      id:p.id, name:p.name, role:p.role||'Project Manager',
-      status:p.status||'ontrack', progress:p.progress||0,
-      desc:p.desc||p.notes&&p.notes[0]||'',
+      id:p.id,name:p.name,role:p.role||'Project Manager',
+      status:p.status||'ontrack',progress:p.progress||0,
+      desc:p.desc||(p.notes&&p.notes[0])||'',
       tags:p.tags||[],
-      milestones:(p.milestones||[]).map(m=>({
-        t:m.text||m.t, s:m.status||m.s, d:m.date||m.d
-      }))
+      milestones:(p.milestones||[]).map(m=>({t:m.text||m.t,s:m.status||m.s,d:m.date||m.d}))
     }));
-    blockers=projects
-      .filter(p=>p.status==='blocked')
-      .map(p=>({type:'block',proj:p.name,text:p.desc||p.name+' is blocked.'}));
-  }catch(e){console.warn('data.json unavailable',e);}
+    blockers=projects.filter(p=>p.status==='blocked').map(p=>({type:'block',proj:p.name,text:p.desc||p.name+' is blocked.'}));
+    hideOfflineBanner();
+  }catch(e){showOfflineBanner();console.error('API error:',e);}
   renderProjects();renderBlockers();
 }
-initData();
-setInterval(initData,60000);
+document.getElementById('projectList').innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--ink-3);padding:16px 0;">Loading...</div>';
+startAutoRefresh(loadData,30000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';

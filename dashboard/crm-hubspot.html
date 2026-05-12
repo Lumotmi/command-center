@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CRM / HubSpot PM — Livesystems AG</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="shared/api.js"></script>
 <style>
 :root{--bg:#f2f0eb;--surface:#fff;--ink:#0e0e0e;--ink-2:#3a3a3a;--ink-3:#888;--ink-4:#bbb;--accent:#d63a2f;--accent-dim:rgba(214,58,47,.1);--border:#d8d4cc;--border-dark:#0e0e0e;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;}
 *{margin:0;padding:0;box-sizing:border-box;}body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
@@ -292,13 +293,14 @@ function renderDecisions(){
   el.innerHTML=decisions.map(d=>`<div class="decision"><div class="dec-hd"><div class="dec-title">${d.title}</div><div class="dec-date">${d.date}</div></div><div class="dec-body">${d.body}</div></div>`).join('');
 }
 
-function saveNote(){
+async function saveNote(){
   const text=document.getElementById('pmNotes').value.trim();
   if(!text)return;
-  const notes=JSON.parse(localStorage.getItem('crm-notes')||'[]');
-  notes.unshift({date:new Date().toISOString().split('T')[0],text});
-  localStorage.setItem('crm-notes',JSON.stringify(notes));
-  alert('Note saved.');
+  try{
+    await API.updateProject('hubspot',{notes:text});
+    document.getElementById('pmNotes').value='';
+    alert('Note saved.');
+  }catch(e){console.error(e);alert('Failed to save note.');}
 }
 
 async function genBriefing(){
@@ -315,20 +317,19 @@ async function genBriefing(){
   btn.disabled=false;btn.textContent='Generate PM briefing';
 }
 
-async function initData(){
+async function loadData(){
   try{
-    const r=await fetch('/data.json?t='+Date.now());
-    const d=await r.json();
+    const d=await API.getProjects();
+    const hs=(d.projects||[]).find(p=>p.id==='hubspot');
     if(phases===null){
-      const hs=(d.projects||[]).find(p=>p.id==='hubspot');
       phases=(hs&&hs.milestones||[]).map(m=>({title:m.text||m.t||'',status:m.status||m.s||'pending',date:m.date||m.d||'',detail:m.detail||''}));
+      savePhases();
     }
-    decisions=d.crm_decisions||[];
-  }catch(e){if(phases===null)phases=[];}
+    hideOfflineBanner();
+  }catch(e){showOfflineBanner();if(phases===null)phases=[];console.error('API error:',e);}
   renderTimeline();renderDecisions();
 }
-initData();
-setInterval(()=>{fetch('/data.json?t='+Date.now()).then(r=>r.json()).then(d=>{decisions=d.crm_decisions||[];renderDecisions();}).catch(()=>{});},60000);
+startAutoRefresh(loadData,30000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';

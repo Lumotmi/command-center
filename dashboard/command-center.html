@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Command Center — Livesystems AG</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="shared/api.js"></script>
 <style>
 :root {
   --bg:#f2f0eb; --surface:#ffffff; --ink:#0e0e0e; --ink-2:#3a3a3a;
@@ -238,90 +239,58 @@ wDays.forEach((d,i)=>{
 });
 
 let tasks=[];
-const save=()=>{document.getElementById('statT').textContent=tasks.filter(t=>!t.done).length;};
 function render(){
   const list=document.getElementById('taskList');list.innerHTML='';
-  tasks.slice(0,6).forEach((t,i)=>{
+  if(!tasks.length){list.innerHTML='<div class="t-item" style="color:var(--ink-3);font-size:10px;justify-content:center;">No open tasks</div>';document.getElementById('statT').textContent='0';return;}
+  tasks.slice(0,6).forEach(t=>{
     const el=document.createElement('div');el.className='t-item'+(t.done?' done':'');
-    el.innerHTML=`<div class="t-cb" onclick="tog(${i})">${t.done?'✓':''}</div><div class="t-txt">${t.text}</div><div class="t-tag${t.tag==='SPOC'?' spoc':''}">${t.tag}</div><div class="t-x" onclick="del(${i})">×</div>`;
+    el.innerHTML=`<div class="t-cb" onclick="tog(${t.id})">${t.done?'✓':''}</div><div class="t-txt">${t.text}</div><div class="t-tag${t.tag==='SPOC'?' spoc':''}">${t.tag||''}</div><div class="t-x" onclick="del(${t.id})">×</div>`;
     list.appendChild(el);
   });
-  save();
+  document.getElementById('statT').textContent=tasks.filter(t=>!t.done).length;
 }
-function addTask(){const v=document.getElementById('taskIn').value.trim();if(!v)return;tasks.unshift({id:Date.now(),text:v,tag:'General',done:false});document.getElementById('taskIn').value='';render();}
-function tog(i){tasks[i].done=!tasks[i].done;render();}
-function del(i){tasks.splice(i,1);render();}
-function setBadge(id,text,red){
-  const el=document.getElementById(id);
-  if(!el)return;
-  el.textContent=text;
-  el.className=red?'badge red':'badge';
-}
+async function addTask(){const v=document.getElementById('taskIn').value.trim();if(!v)return;try{await API.addTask(v,'General','medium');document.getElementById('taskIn').value='';await loadData();}catch(e){console.error(e);}}
+async function tog(id){const t=tasks.find(x=>x.id===id);if(!t)return;try{await API.updateTask(id,{done:!t.done});await loadData();}catch(e){console.error(e);}}
+async function del(id){try{await API.deleteTask(id);await loadData();}catch(e){console.error(e);}}
+function setBadge(id,text,red){const el=document.getElementById(id);if(!el)return;el.textContent=text;el.className=red?'badge red':'badge';}
 
-async function initData(){
+async function loadData(){
   try{
-    const r=await fetch('/data.json?t='+Date.now());
-    const d=await r.json();
-    tasks=d.tasks||[];
-    const team=d.team||[];
-    const projects=d.projects||[];
-    const spoc=d.spoc_log||[];
+    const [tasksData,spocData,teamData,projectsData]=await Promise.all([API.getTasks(false),API.getSpoc(),API.getTeam(),API.getProjects()]);
+    tasks=tasksData.tasks||[];
+    const team=teamData.team||[];
+    const projects=projectsData.projects||[];
+    const spoc=spocData.spoc_log||[];
     const today=new Date();
-
-    // Hero stats
     document.getElementById('statMembers').textContent=team.length||'—';
     const active=projects.filter(p=>p.status!=='done');
     const blocked=projects.filter(p=>p.status==='blocked');
     document.getElementById('statProjects').textContent=active.length;
     document.getElementById('statBlocked').textContent=blocked.length;
     document.getElementById('statBlocked').className=blocked.length?'hst-v r':'hst-v';
-
-    // SPOC badge
     const urgent=spoc.filter(e=>e.status==='urgent').length;
     const open=spoc.filter(e=>e.status==='open').length;
-    if(urgent>0) setBadge('badgeSpoc',urgent+' Urgent',true);
-    else if(open>0) setBadge('badgeSpoc',open+' Open',false);
+    if(urgent>0)setBadge('badgeSpoc',urgent+' Urgent',true);
+    else if(open>0)setBadge('badgeSpoc',open+' Open',false);
     else setBadge('badgeSpoc','All clear',false);
-
-    // Team badge — low health or stale check-in (>7 days)
     document.getElementById('teamSub').textContent=team.length+' Direct Reports';
-    const needAttention=team.filter(m=>{
-      if(m.health<=6)return true;
-      if(m.lastCheck){
-        const days=(today-new Date(m.lastCheck))/(1000*60*60*24);
-        if(days>7)return true;
-      }
-      return false;
-    });
-    if(needAttention.length>0) setBadge('badgeTeam',needAttention.length+' Need attention',true);
+    const needAttention=team.filter(m=>{if(m.health<=6)return true;if(m.lastCheck){const d=(today-new Date(m.lastCheck))/(1000*60*60*24);if(d>7)return true;}return false;});
+    if(needAttention.length>0)setBadge('badgeTeam',needAttention.length+' Need attention',true);
     else setBadge('badgeTeam','All good',false);
-
-    // Projects badge
-    if(blocked.length>0) setBadge('badgeProjects',blocked.length+' Blocked',true);
-    else if(active.length>0) setBadge('badgeProjects',active.length+' Active',false);
+    if(blocked.length>0)setBadge('badgeProjects',blocked.length+' Blocked',true);
+    else if(active.length>0)setBadge('badgeProjects',active.length+' Active',false);
     else setBadge('badgeProjects','All done',false);
-
-    // CRM badge — HubSpot project status
     const hs=projects.find(p=>p.id==='hubspot');
-    if(hs){
-      const statusMap={ontrack:'On track',atrisk:'At risk',blocked:'Blocked',done:'Done'};
-      setBadge('badgeCrm',statusMap[hs.status]||hs.status,hs.status==='atrisk'||hs.status==='blocked');
-    }
-  }catch(e){console.warn('data.json unavailable',e);}
-
-  // Weekly rhythm badge (day-based, no data.json needed)
+    if(hs){const statusMap={ontrack:'On track',atrisk:'At risk',blocked:'Blocked',done:'Done'};setBadge('badgeCrm',statusMap[hs.status]||hs.status,hs.status==='atrisk'||hs.status==='blocked');}
+    hideOfflineBanner();
+  }catch(e){showOfflineBanner();console.error('API error:',e);}
   const day=new Date().getDay();
   const rhythmEl=document.getElementById('rhythmB');
-  if(rhythmEl){
-    if(day===5){rhythmEl.textContent='Friday lookback';rhythmEl.className='badge red';}
-    else if(day===1){rhythmEl.textContent='Monday outlook';rhythmEl.className='badge red';}
-    else{rhythmEl.textContent='Weekly';rhythmEl.className='badge';}
-  }
-
+  if(rhythmEl){if(day===5){rhythmEl.textContent='Friday lookback';rhythmEl.className='badge red';}else if(day===1){rhythmEl.textContent='Monday outlook';rhythmEl.className='badge red';}else{rhythmEl.textContent='Weekly';rhythmEl.className='badge';}}
   render();
 }
-initData();
-setInterval(initData,60000);
+document.getElementById('taskList').innerHTML='<div class="t-item" style="color:var(--ink-3);font-size:10px;justify-content:center;">Loading...</div>';
+startAutoRefresh(loadData,30000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';
