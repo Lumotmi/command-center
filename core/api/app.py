@@ -335,6 +335,21 @@ def create_reminder():
     return jsonify(reminder), 201
 
 
+@app.route("/api/reminders/<int:reminder_id>", methods=["PATCH"])
+def patch_reminder(reminder_id):
+    body = request.get_json() or {}
+    data = _load()
+    for r in data.get("reminders", []):
+        if r["id"] == reminder_id:
+            for k in ("message", "send_at", "channel", "sent"):
+                if k in body:
+                    r[k] = body[k]
+            _save(data)
+            _audit("PATCH", f"/api/reminders/{reminder_id}", f"updated reminder #{reminder_id}")
+            return jsonify(r)
+    return _err(f"Reminder {reminder_id} not found", 404)
+
+
 # ── Weekly archive ────────────────────────────────────────────────────────────
 
 @app.route("/api/weekly")
@@ -400,6 +415,31 @@ def patch_config():
     _save(data)
     _audit("PATCH", "/api/config", "updated config")
     return jsonify(cfg)
+
+
+# ── Scheduler status ─────────────────────────────────────────────────────────
+
+_SCHED_PID_FILE  = Path.home() / "workspace" / "scheduler.pid"
+_SCHED_TICK_FILE = Path.home() / "workspace" / "scheduler_tick.json"
+
+
+@app.route("/api/scheduler/status")
+def scheduler_status():
+    pid, running = None, False
+    if _SCHED_PID_FILE.exists():
+        try:
+            pid = int(_SCHED_PID_FILE.read_text(encoding="utf-8").strip())
+            os.kill(pid, 0)   # signal 0: raises if process is gone
+            running = True
+        except (ValueError, ProcessLookupError, PermissionError):
+            running = False
+    last_tick = None
+    if _SCHED_TICK_FILE.exists():
+        try:
+            last_tick = json.loads(_SCHED_TICK_FILE.read_text(encoding="utf-8")).get("last_tick")
+        except Exception:
+            pass
+    return jsonify({"running": running, "pid": pid, "last_tick": last_tick})
 
 
 # ── Env file management ───────────────────────────────────────────────────────

@@ -110,19 +110,32 @@ else
   warn "Try: curl http://localhost:$PORT/api/status"
 fi
 
-# ── 10. Print URLs ─────────────────────────────────────────────────────────────
+# ── 10. Start scheduler ───────────────────────────────────────────────────────
+step "Starting scheduler..."
+SCHED_PID="$WORKSPACE/scheduler.pid"
+if [ -f "$SCHED_PID" ] && kill -0 "$(cat "$SCHED_PID")" 2>/dev/null; then
+  ok "Scheduler already running (PID $(cat "$SCHED_PID"))"
+else
+  nohup python3 "$SCRIPT_DIR/core/scheduler/scheduler.py" >> "$WORKSPACE/scheduler.log" 2>&1 &
+  echo $! > "$SCHED_PID"
+  ok "Scheduler started (PID $(cat "$SCHED_PID")) — log: $WORKSPACE/scheduler.log"
+fi
+
+# ── 11. Print URLs ─────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}────────────────────────────────────────────────────────${RESET}"
 echo -e "${BOLD}  Command Center is running${RESET}"
 echo "────────────────────────────────────────────────────────"
-echo -e "  ${GREEN}Dashboard${RESET}   http://localhost:$PORT"
-echo -e "  ${GREEN}Onboarding${RESET}  http://localhost:$PORT/onboarding"
-echo -e "  ${GREEN}API status${RESET}  http://localhost:$PORT/api/status"
-echo -e "  ${GREEN}API log${RESET}     $WORKSPACE/api.log"
+echo -e "  ${GREEN}Dashboard${RESET}        http://localhost:$PORT"
+echo -e "  ${GREEN}Onboarding${RESET}       http://localhost:$PORT/onboarding"
+echo -e "  ${GREEN}API status${RESET}       http://localhost:$PORT/api/status"
+echo -e "  ${GREEN}Scheduler status${RESET} http://localhost:$PORT/api/scheduler/status"
+echo -e "  ${GREEN}API log${RESET}          $WORKSPACE/api.log"
+echo -e "  ${GREEN}Scheduler log${RESET}    $WORKSPACE/scheduler.log"
 echo "────────────────────────────────────────────────────────"
 echo ""
 
-# ── 11. Open onboarding in browser ────────────────────────────────────────────
+# ── 12. Open onboarding in browser ───────────────────────────────────────────
 xdg-open "http://localhost:$PORT/onboarding" 2>/dev/null \
   || open "http://localhost:$PORT/onboarding" 2>/dev/null \
   || echo -e "  Open ${GREEN}http://localhost:$PORT/onboarding${RESET} to complete setup."
