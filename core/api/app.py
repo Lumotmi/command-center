@@ -13,7 +13,10 @@ from flask_cors import CORS
 # ── Paths ──────────────────────────────────────────────────────────────────────
 DATA_FILE     = Path.home() / "workspace" / "data.json"
 AUDIT_LOG     = Path.home() / "workspace" / "audit.log"
-DASHBOARD_DIR = Path(__file__).resolve().parent.parent.parent / "dashboard"
+DASHBOARD_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "dashboard",
+)
 
 # ── workspace_tool import (works from core/api/ or ~/workspace/) ───────────────
 for _p in [
@@ -77,7 +80,7 @@ def index():
 
 @app.route("/dashboard/shared/<path:filename>")
 def shared_static(filename):
-    return send_from_directory(DASHBOARD_DIR / "shared", filename)
+    return send_from_directory(os.path.join(DASHBOARD_DIR, "shared"), filename)
 
 
 @app.route("/dashboard/<path:filename>")
@@ -384,7 +387,7 @@ def agent():
 
 @app.errorhandler(404)
 def not_found(e):
-    return jsonify({"error": "endpoint not found"}), 404
+    return {"error": "endpoint not found"}, 404
 
 
 @app.errorhandler(500)
