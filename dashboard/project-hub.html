@@ -146,16 +146,16 @@ textarea.field::placeholder{color:var(--ink-4);}
   <div class="page-hero">
     <div class="eyebrow">PM + Advisory</div>
     <div class="page-title">PROJECT<br><span>Hub</span></div>
-    <div class="page-sub">HubSpot CRM · Order Management System · AI Planning Tool OOH · Advisory roles</div>
+    <div class="page-sub" id="pageSub">Loading projects...</div>
   </div>
 
   <div class="sec">
     <div class="sec-label">Overview</div>
     <div class="stats-row">
-      <div class="stat"><div class="stat-v">3</div><div class="stat-l">Active (PM)</div></div>
-      <div class="stat"><div class="stat-v">2</div><div class="stat-l">Advisory</div></div>
-      <div class="stat"><div class="stat-v r">2</div><div class="stat-l">At risk / blocked</div></div>
-      <div class="stat"><div class="stat-v">Aug 2026</div><div class="stat-l">Next go-live</div></div>
+      <div class="stat"><div class="stat-v" id="statTotal">—</div><div class="stat-l">Total projects</div></div>
+      <div class="stat"><div class="stat-v ok" id="statOnTrack">—</div><div class="stat-l">On track</div></div>
+      <div class="stat"><div class="stat-v r" id="statAtRisk">—</div><div class="stat-l">At risk</div></div>
+      <div class="stat"><div class="stat-v r" id="statBlocked">—</div><div class="stat-l">Blocked</div></div>
     </div>
   </div>
 
@@ -224,7 +224,8 @@ async function genSummary(){
   out.style.display='block';out.textContent='Generating...';
   const ctx=projects.map(p=>`- ${p.name} (${p.role}, ${p.progress}%, ${p.status})`).join('\n');
   try{
-    const _projPrompt = `You are a PM assistant for Livesystems AG. Projects:\n${ctx}\nKnown blockers: OMS API waiting on Post CH AG, HubSpot data migration scope creep.\n\n${update?'New update:\n'+update:'Generate a general status summary.'}\n\nWrite a concise 3-4 paragraph executive PM summary: what changed, project impacts, actions for this week, risks flagged. Be direct and specific.`;
+    const blockerCtx=blockers.length?blockers.map(b=>`- ${b.proj}: ${b.text}`).join('\n'):'No active blockers.';
+    const _projPrompt = `You are a PM assistant for Livesystems AG. Projects:\n${ctx}\nCurrent blockers:\n${blockerCtx}\n\n${update?'New update:\n'+update:'Generate a general status summary.'}\n\nWrite a concise 3-4 paragraph executive PM summary: what changed, project impacts, actions for this week, risks flagged. Be direct and specific.`;
     out.textContent = await callAI(_projPrompt, 800);
   }catch(e){out.textContent='Failed: '+e.message;}
   btn.disabled=false;btn.textContent='Analyse & summarise';
@@ -232,8 +233,9 @@ async function genSummary(){
 
 async function loadData(){
   try{
-    const d=await API.getProjects();
-    projects=(d.projects||[]).map(p=>({
+    const [projData,cfgData]=await Promise.all([API.getProjects(),API.getConfig()]);
+    if(cfgData&&cfgData.ollama_base)OLLAMA_BASE=cfgData.ollama_base;
+    projects=(projData.projects||[]).map(p=>({
       id:p.id,name:p.name,role:p.role||'Project Manager',
       status:p.status||'ontrack',progress:p.progress||0,
       desc:p.desc||(p.notes&&p.notes[0])||'',
@@ -241,6 +243,11 @@ async function loadData(){
       milestones:(p.milestones||[]).map(m=>({t:m.text||m.t,s:m.status||m.s,d:m.date||m.d}))
     }));
     blockers=projects.filter(p=>p.status==='blocked').map(p=>({type:'block',proj:p.name,text:p.desc||p.name+' is blocked.'}));
+    document.getElementById('pageSub').textContent=projects.map(p=>p.name).join(' · ');
+    document.getElementById('statTotal').textContent=projects.length;
+    document.getElementById('statOnTrack').textContent=projects.filter(p=>p.status==='ontrack').length;
+    document.getElementById('statAtRisk').textContent=projects.filter(p=>p.status==='atrisk').length;
+    document.getElementById('statBlocked').textContent=projects.filter(p=>p.status==='blocked').length;
     hideOfflineBanner();
   }catch(e){showOfflineBanner();console.error('API error:',e);}
   renderProjects();renderBlockers();
@@ -250,7 +257,7 @@ startAutoRefresh(loadData,30000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';
-const OLLAMA_BASE = 'http://localhost:11434';
+let OLLAMA_BASE = 'http://localhost:11434';
 
 function getModel(){
   return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';

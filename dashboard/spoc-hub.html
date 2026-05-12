@@ -286,8 +286,9 @@ async function extractKeywords(){
 }
 async function loadData(){
   try{
-    const d=await API.getSpoc();
-    logs=d.spoc_log||[];
+    const [spocData,cfgData]=await Promise.all([API.getSpoc(),API.getConfig()]);
+    if(cfgData&&cfgData.ollama_base)OLLAMA_BASE=cfgData.ollama_base;
+    logs=spocData.spoc_log||[];
     hideOfflineBanner();
   }catch(e){showOfflineBanner();console.error('API error:',e);}
   renderLogs();
@@ -297,7 +298,7 @@ startAutoRefresh(loadData,30000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';
-const OLLAMA_BASE = 'http://localhost:11434';
+let OLLAMA_BASE = 'http://localhost:11434';
 
 function getModel(){
   return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';

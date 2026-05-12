@@ -1,0 +1,187 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Command Center data.json schema",
+  "description": "Contract between data.json and the Command Center application. All keys documented with type, description, and constraints.",
+  "type": "object",
+  "required": ["_meta", "tasks", "team", "spoc_log", "projects", "weekly_archive", "reminders", "config"],
+  "properties": {
+    "_meta": {
+      "type": "object",
+      "description": "Internal metadata written by the API on every save.",
+      "properties": {
+        "version":      { "type": "string", "description": "Schema version string." },
+        "last_updated": { "type": "string", "format": "date-time", "description": "ISO 8601 UTC timestamp of last write." },
+        "updated_by":   { "type": "string", "description": "Identifier of the writer — 'command-center-api' or 'workspace_tool'." },
+        "description":  { "type": "string", "description": "Human-readable description of this data store." }
+      }
+    },
+
+    "config": {
+      "type": "object",
+      "description": "Workspace configuration. Dashboards read this on every load — change values here, not in the HTML.",
+      "properties": {
+        "org": {
+          "type": "string",
+          "description": "Organisation name shown in the hero eyebrow and AI prompts.",
+          "example": "Livesystems AG"
+        },
+        "org_subtitle": {
+          "type": "string",
+          "description": "Short subtitle appended to org name in the hero header.",
+          "example": "Personal OS"
+        },
+        "ollama_base": {
+          "type": "string",
+          "format": "uri",
+          "description": "Base URL for local Ollama inference server. All dashboards read this before the first AI call.",
+          "example": "http://localhost:11434"
+        },
+        "spaces": {
+          "type": "array",
+          "description": "Ordered list of dashboard spaces shown on the command-center home page.",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "href", "sub", "desc"],
+            "properties": {
+              "id":          { "type": "string", "description": "Unique space identifier." },
+              "name":        { "type": "string", "description": "Display name shown as the space heading." },
+              "href":        { "type": "string", "description": "Absolute path to the dashboard page, e.g. '/spoc-hub.html'." },
+              "sub":         { "type": "string", "description": "Sub-label shown below the name." },
+              "sub_id":      { "type": "string", "description": "Optional — HTML element ID for the sub-label, used when the sub text is updated dynamically." },
+              "desc":        { "type": "string", "description": "One-paragraph description shown on the space row card." },
+              "badge_id":    { "type": "string", "description": "Optional — HTML element ID of the badge span updated by loadData() on the home page." },
+              "badge_static":{ "type": "string", "description": "Optional — Static badge text for spaces that do not have a dynamic badge." }
+            }
+          }
+        }
+      }
+    },
+
+    "tasks": {
+      "type": "array",
+      "description": "Task list. Managed via /api/tasks.",
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "done", "created"],
+        "properties": {
+          "id":       { "type": "integer", "description": "Auto-incrementing unique task ID." },
+          "text":     { "type": "string",  "description": "Task description." },
+          "tag":      { "type": "string",  "enum": ["SPOC","Team","Project","CRM","General",""], "description": "Category tag." },
+          "priority": { "type": "string",  "enum": ["high","medium","low"], "description": "Task priority." },
+          "done":     { "type": "boolean", "description": "True when the task is complete." },
+          "created":  { "type": "string",  "format": "date", "description": "ISO date the task was created." }
+        }
+      }
+    },
+
+    "team": {
+      "type": "array",
+      "description": "Direct reports. Managed via /api/team. IDs must match schema.json team_ids.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "role", "health"],
+        "properties": {
+          "id":        { "type": "string",  "description": "Short identifier, e.g. 'lk'. Referenced by agent actions." },
+          "name":      { "type": "string",  "description": "Full display name." },
+          "role":      { "type": "string",  "description": "Job title / role label." },
+          "avatar":    { "type": "string",  "description": "Two-letter initials for avatar display." },
+          "color":     { "type": "string",  "description": "CSS hex colour for avatar background." },
+          "health":    { "type": "integer", "minimum": 1, "maximum": 10, "description": "Current wellbeing score, 1–10." },
+          "lastCheck": { "type": "string",  "format": "date", "description": "Date of last health check or 1:1." },
+          "moods":     { "type": "array",   "description": "Array of historical mood entries (reserved for future use)." },
+          "notes":     { "type": "array",   "items": { "type": "string" }, "description": "1:1 and observation notes, newest first. Each entry prepended with date by the API." }
+        }
+      }
+    },
+
+    "spoc_log": {
+      "type": "array",
+      "description": "SPOC communication log between Livesystems AG and Post CH AG. Managed via /api/spoc.",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "status", "date"],
+        "properties": {
+          "id":     { "type": "integer", "description": "Auto-incrementing entry ID." },
+          "title":  { "type": "string",  "description": "Short title for the log entry." },
+          "body":   { "type": "string",  "description": "Full detail of the communication or decision." },
+          "status": { "type": "string",  "enum": ["open","urgent","done"], "description": "Current status of this SPOC item." },
+          "kws":    { "type": "array",   "items": { "type": "string" }, "description": "AI-extracted or manually added keywords." },
+          "date":   { "type": "string",  "format": "date", "description": "ISO date the entry was logged." }
+        }
+      }
+    },
+
+    "projects": {
+      "type": "array",
+      "description": "Active projects managed by the operator. Managed via /api/projects. IDs must match schema.json project_ids.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "status", "progress"],
+        "properties": {
+          "id":         { "type": "string",  "enum": ["hubspot","oms","aiplan"], "description": "Stable project identifier." },
+          "name":       { "type": "string",  "description": "Display name of the project." },
+          "role":       { "type": "string",  "description": "Operator's role on this project, e.g. 'Project Manager'." },
+          "status":     { "type": "string",  "enum": ["ontrack","atrisk","blocked","active","done"], "description": "Current project health status." },
+          "progress":   { "type": "integer", "minimum": 0, "maximum": 100, "description": "Completion percentage, 0–100." },
+          "color":      { "type": "string",  "description": "CSS hex colour for status indicators." },
+          "desc":       { "type": "string",  "description": "Short project description." },
+          "tags":       { "type": "array",   "items": { "type": "string" }, "description": "Freeform tags." },
+          "milestones": { "type": "array",   "description": "List of project milestones.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text":   { "type": "string", "description": "Milestone description." },
+                "status": { "type": "string", "enum": ["done","active","pending","blocked"] },
+                "date":   { "type": "string", "description": "Target or completed date." }
+              }
+            }
+          },
+          "notes": { "type": "array", "items": { "type": "string" }, "description": "PM notes, newest first. Each entry prepended with date by the API." }
+        }
+      }
+    },
+
+    "weekly_archive": {
+      "type": "array",
+      "description": "Friday lookback and Monday outlook entries. Managed via /api/weekly. Capped at 52 entries.",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "content", "date"],
+        "properties": {
+          "id":      { "type": "integer", "description": "Sequential entry ID." },
+          "type":    { "type": "string",  "enum": ["friday","monday","summary"], "description": "Entry type." },
+          "content": { "type": "string",  "description": "Full text of the lookback or outlook." },
+          "week":    { "description": "ISO week number or date string." },
+          "date":    { "type": "string",  "format": "date", "description": "Date the entry was saved." }
+        }
+      }
+    },
+
+    "reminders": {
+      "type": "array",
+      "description": "Scheduled reminders. Managed via /api/reminders. Processed by scheduler.py.",
+      "items": {
+        "type": "object",
+        "required": ["id", "message", "send_at"],
+        "properties": {
+          "id":       { "type": "integer", "description": "Auto-incrementing reminder ID." },
+          "message":  { "type": "string",  "description": "Reminder message text." },
+          "send_at":  { "type": "string",  "format": "date-time", "description": "ISO 8601 datetime to send the reminder." },
+          "channel":  { "type": "string",  "enum": ["telegram","email","both",""], "description": "Delivery channel." },
+          "sent":     { "type": "boolean", "description": "True after the reminder has been dispatched." },
+          "created":  { "type": "string",  "format": "date", "description": "Date the reminder was created." }
+        }
+      }
+    },
+
+    "email_history": {
+      "type": "array",
+      "description": "Reserved for future email analytics history storage."
+    },
+
+    "crm_decisions": {
+      "type": "array",
+      "description": "Reserved for future CRM decision log storage."
+    }
+  }
+}

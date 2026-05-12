@@ -196,6 +196,7 @@ document.getElementById('topDate').textContent=`${days[now.getDay()]} ${now.getD
 
 let phases=JSON.parse(localStorage.getItem('crm-phases')||'null');
 let decisions=[];
+let crmProject=null;
 
 const STATUS_LABELS={done:'Done',active:'Active',pending:'Pending',blocked:'Blocked'};
 
@@ -311,7 +312,9 @@ async function genBriefing(){
   out.style.display='block';out.textContent='Generating PM briefing...';
   const ctx=phases.map(p=>`- ${p.title}: ${p.status} (${p.date}) — ${p.detail}`).join('\n');
   try{
-    const _crmPrompt = `You are a PM assistant for a HubSpot CRM implementation at Livesystems AG.\n\nProject: 52% complete, target August 2026 go-live.\nTimeline:\n${ctx}\nKey risks: OMS API blocked waiting on Post CH AG, data migration scope creep.\n\n${userNotes?'New notes:\n'+userNotes:'Write a general status briefing.'}\n\nWrite a concise 3-4 paragraph executive PM briefing: current status, what's on track, key risks and mitigations, what the PM should action this week. Be specific and direct.`;
+    const pct=crmProject?crmProject.progress+'%':'unknown';
+    const latestNote=crmProject&&crmProject.notes&&crmProject.notes.length?'\nLatest PM note: '+crmProject.notes[0]:'';
+    const _crmPrompt = `You are a PM assistant for a HubSpot CRM implementation at Livesystems AG.\n\nProject: ${pct} complete.${latestNote}\nTimeline:\n${ctx}\n\n${userNotes?'New notes:\n'+userNotes:'Write a general status briefing.'}\n\nWrite a concise 3-4 paragraph executive PM briefing: current status, what's on track, key risks and mitigations, what the PM should action this week. Be specific and direct.`;
     out.textContent = await callAI(_crmPrompt, 800);
   }catch(e){out.textContent='Failed: '+e.message;}
   btn.disabled=false;btn.textContent='Generate PM briefing';
@@ -319,8 +322,10 @@ async function genBriefing(){
 
 async function loadData(){
   try{
-    const d=await API.getProjects();
-    const hs=(d.projects||[]).find(p=>p.id==='hubspot');
+    const [projData,cfgData]=await Promise.all([API.getProjects(),API.getConfig()]);
+    if(cfgData&&cfgData.ollama_base)OLLAMA_BASE=cfgData.ollama_base;
+    const hs=(projData.projects||[]).find(p=>p.id==='hubspot');
+    crmProject=hs||null;
     if(phases===null){
       phases=(hs&&hs.milestones||[]).map(m=>({title:m.text||m.t||'',status:m.status||m.s||'pending',date:m.date||m.d||'',detail:m.detail||''}));
       savePhases();
@@ -333,7 +338,7 @@ startAutoRefresh(loadData,30000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';
-const OLLAMA_BASE = 'http://localhost:11434';
+let OLLAMA_BASE = 'http://localhost:11434';
 
 function getModel(){
   return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';

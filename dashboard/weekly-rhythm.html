@@ -348,6 +348,7 @@ async function loadArchive(){
 }
 async function initData(){
   await loadArchive();
+  API.getConfig().then(cfg=>{if(cfg&&cfg.ollama_base)OLLAMA_BASE=cfg.ollama_base;}).catch(()=>{});
   autoMode();
 }
 initData();
@@ -355,7 +356,7 @@ setInterval(loadArchive,60000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';
-const OLLAMA_BASE = 'http://localhost:11434';
+let OLLAMA_BASE = 'http://localhost:11434';
 
 function getModel(){
   return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';

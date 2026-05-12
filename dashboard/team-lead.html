@@ -142,7 +142,7 @@ select.field:focus,input.field:focus,textarea.field:focus{border-color:var(--bor
   <div class="page-hero">
     <div class="eyebrow">People Management</div>
     <div class="page-title">TEAM<br><span>Lead</span></div>
-    <div class="page-sub">Sales Operations (1) + Sales Coordination / Inside Sales (5) · Health tracking · Check-ins · Recurring tasks</div>
+    <div class="page-sub" id="pageSub">Health tracking · Check-ins · Recurring tasks</div>
   </div>
 
   <div class="sec">
@@ -225,7 +225,7 @@ let team=[];
 
 const recurring=[
   {id:1,title:'Weekly team async check-in',desc:'Send check-in message to all 6 reports. How are they doing, any blockers?',freq:'weekly'},
-  {id:2,title:'1:1 with Alina (Sales Ops)',desc:'30-min sync on pipeline health, operational blockers, improvements.',freq:'weekly'},
+  {id:2,title:'1:1 with Sales Ops lead',desc:'30-min sync on pipeline health, operational blockers, improvements.',freq:'weekly'},
   {id:3,title:'Sales coordination standup',desc:'15-min standup — review active deals and coordination queue.',freq:'weekly'},
   {id:4,title:'Review task completion',desc:'Check who is overloaded, who needs support.',freq:'weekly'},
   {id:5,title:'Monthly individual performance notes',desc:'Brief private notes per team member — wins, areas to develop.',freq:'monthly'},
@@ -267,7 +267,7 @@ function renderMembers(){
   });
   document.getElementById('avgH').textContent=(total/team.length).toFixed(1);
   document.getElementById('lowH').textContent=low;
-  document.getElementById('checkDone').textContent=`${ci}/6`;
+  document.getElementById('checkDone').textContent=`${ci}/${team.length}`;
 }
 
 function renderRecurring(){
@@ -330,12 +330,15 @@ function showHistory(){
 
 async function loadData(){
   try{
-    const d=await API.getTeam();
-    team=(d.team||[]).map(m=>({
+    const [teamData,cfgData]=await Promise.all([API.getTeam(),API.getConfig()]);
+    if(cfgData&&cfgData.ollama_base)OLLAMA_BASE=cfgData.ollama_base;
+    team=(teamData.team||[]).map(m=>({
       id:m.id,name:m.name,role:m.role,
       health:m.health||8,lastCheck:m.lastCheck||'',
       note:(m.notes&&m.notes.length)?m.notes[0]:''
     }));
+    const roles=[...new Set(team.map(m=>m.role))];
+    document.getElementById('pageSub').textContent=roles.join(' · ')+' · Health tracking · Check-ins · Recurring tasks';
     hideOfflineBanner();
   }catch(e){showOfflineBanner();console.error('API error:',e);}
   renderMembers();renderRecurring();
@@ -345,7 +348,7 @@ startAutoRefresh(loadData,30000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';
-const OLLAMA_BASE = 'http://localhost:11434';
+let OLLAMA_BASE = 'http://localhost:11434';
 
 function getModel(){
   return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';

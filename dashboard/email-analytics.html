@@ -222,15 +222,29 @@ const now=new Date();
 const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 document.getElementById('topDate').textContent=`${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
 
-// Check API is alive
-API.status().then(()=>hideOfflineBanner()).catch(()=>showOfflineBanner());
-
 let lastResult=null;
 let history=JSON.parse(localStorage.getItem('email-hist')||'[]');
+let DEMO='';
 
-const DEMO=`Front Analytics Report - Week 18/2026\n\nTeam Performance:\n- Total conversations: 847\n- Avg first response time: 2h 14m (vs 2h 45m last week, -18%)\n- Avg resolution time: 4h 38m (vs 5h 10m, -10%)\n- CSAT: 4.3/5 (vs 4.1/5, +4.9%)\n- SLA compliance: 91% (target 90%) ✓\n\nAgent breakdown:\n- Alina F.: 180 conv, CSAT 4.5, Avg resp 1h 50m\n- Fabio K.: 210 conv, CSAT 4.4, Avg resp 2h 05m\n- Larissa A.: 120 conv, CSAT 3.9, Avg resp 3h 10m (below avg)\n- Saskia S.: 145 conv, CSAT 4.2, Avg resp 2h 30m\n- Kathrin B.: 95 conv, CSAT 4.1, Avg resp 2h 45m\n- Bastri U.: 97 conv, CSAT 4.6, Avg resp 1h 55m\n\nTop categories:\n1. Campaign orders: 234 (28%)\n2. Billing: 189 (22%)\n3. Technical OMS: 156 (18%)\n4. General: 145 (17%)\n5. Post CH AG escalations: 82 (10%)\n\nUnresolved: 23 (2.7%) — above target of 2%`;
+function buildDemo(team){
+  const convs=[180,210,120,145,95,97];
+  const csat=[4.5,4.4,3.9,4.2,4.1,4.6];
+  const resp=['1h 50m','2h 05m','3h 10m (below avg)','2h 30m','2h 45m','1h 55m'];
+  const agents=team.slice(0,6).map((m,i)=>{
+    const parts=m.name.split(' ');
+    const short=`${parts[0]} ${parts[1]?parts[1][0]+'.':''}`;
+    return `- ${short}: ${convs[i]||100} conv, CSAT ${csat[i]||4.0}, Avg resp ${resp[i]||'2h 00m'}`;
+  });
+  return `Front Analytics Report - Week 18/2026\n\nTeam Performance:\n- Total conversations: 847\n- Avg first response time: 2h 14m (vs 2h 45m last week, -18%)\n- Avg resolution time: 4h 38m (vs 5h 10m, -10%)\n- CSAT: 4.3/5 (vs 4.1/5, +4.9%)\n- SLA compliance: 91% (target 90%) ✓\n\nAgent breakdown:\n${agents.join('\n')}\n\nTop categories:\n1. Campaign orders: 234 (28%)\n2. Billing: 189 (22%)\n3. Technical OMS: 156 (18%)\n4. General: 145 (17%)\n5. Post CH AG escalations: 82 (10%)\n\nUnresolved: 23 (2.7%) — above target of 2%`;
+}
 
-function loadDemo(){document.getElementById('reportText').value=DEMO;}
+Promise.all([API.getTeam(),API.getConfig()]).then(([t,cfg])=>{
+  DEMO=buildDemo(t.team||[]);
+  if(cfg&&cfg.ollama_base)OLLAMA_BASE=cfg.ollama_base;
+  hideOfflineBanner();
+}).catch(()=>showOfflineBanner());
+
+function loadDemo(){document.getElementById('reportText').value=DEMO||'Demo unavailable — API offline.';}
 function handleDrop(e){e.preventDefault();document.getElementById('dropZone').classList.remove('over');const f=e.dataTransfer.files[0];if(f)processFile(f);}
 function handleFile(e){if(e.target.files[0])processFile(e.target.files[0]);}
 function processFile(f){if(f.type==='application/pdf'){alert('PDF detected — open it, copy all text (Ctrl+A → Ctrl+C) and paste below.');return;}const r=new FileReader();r.onload=e=>{document.getElementById('reportText').value=e.target.result;};r.readAsText(f);}
@@ -340,7 +354,7 @@ renderHistory();
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';
-const OLLAMA_BASE = 'http://localhost:11434';
+let OLLAMA_BASE = 'http://localhost:11434';
 
 function getModel(){
   return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';

@@ -43,6 +43,9 @@ const API = {
 
   getWeekly: () => apiFetch('/weekly'),
   addWeekly: (type, content, week) => apiFetch('/weekly', { method: 'POST', body: JSON.stringify({ type, content, week }) }),
+
+  getConfig: () => apiFetch('/config'),
+  updateConfig: (fields) => apiFetch('/config', { method: 'PATCH', body: JSON.stringify(fields) }),
 };
 
 function startAutoRefresh(refreshFn, intervalMs = 30000) {

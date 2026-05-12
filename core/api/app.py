@@ -383,6 +383,25 @@ def agent():
         return _err(str(e), 500)
 
 
+# ── Config ────────────────────────────────────────────────────────────────────
+
+@app.route("/api/config")
+def api_config():
+    return jsonify(_load().get("config", {}))
+
+
+@app.route("/api/config", methods=["PATCH"])
+def patch_config():
+    body = request.get_json() or {}
+    data = _load()
+    cfg = data.setdefault("config", {})
+    for k, v in body.items():
+        cfg[k] = v
+    _save(data)
+    _audit("PATCH", "/api/config", "updated config")
+    return jsonify(cfg)
+
+
 # ── Dashboard catch-all (serves /*.html and /shared/* from dashboard/) ────────
 
 @app.route("/<path:filename>")

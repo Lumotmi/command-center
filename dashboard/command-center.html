@@ -154,7 +154,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
 
 <div class="wrap">
   <div class="hero">
-    <div class="eyebrow">Livesystems AG — Personal OS</div>
+    <div class="eyebrow" id="orgEyebrow">Livesystems AG — Personal OS</div>
     <div class="hero-title" id="heroT">GOOD<br><span>MORNING</span></div>
     <div class="hero-stats">
       <div class="hst"><div class="hst-v" id="statMembers">—</div><div class="hst-l">Team members</div></div>
@@ -168,36 +168,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
     <div class="sec-hd">
       <div><div class="sec-label">Navigation</div><div class="sec-title">Your Spaces</div></div>
     </div>
-    <a class="space-row" href="/spoc-hub.html">
-      <div><div class="sp-name">SPOC Hub</div><div class="sp-sub">Post CH AG Interface</div></div>
-      <div class="sp-desc">Single point of contact between Livesystems AG and Post CH AG. AI keyword extraction from notes, communication log, critical item tracking.</div>
-      <div class="sp-right"><span class="badge" id="badgeSpoc">—</span><span class="sp-arrow">→</span></div>
-    </a>
-    <a class="space-row" href="/team-lead.html">
-      <div><div class="sp-name">Team Lead</div><div class="sp-sub" id="teamSub">— Direct Reports</div></div>
-      <div class="sp-desc">Sales Operations (1) and Sales Coordination (5). Health scores, 1:1 notes, AI check-in generator, recurring task management.</div>
-      <div class="sp-right"><span class="badge" id="badgeTeam">—</span><span class="sp-arrow">→</span></div>
-    </a>
-    <a class="space-row" href="/project-hub.html">
-      <div><div class="sp-name">Project Hub</div><div class="sp-sub">PM + Advisory</div></div>
-      <div class="sp-desc">HubSpot CRM, Order Management System, AI Planning Tool OOH. Status boards, milestones, blockers, AI project summaries.</div>
-      <div class="sp-right"><span class="badge" id="badgeProjects">—</span><span class="sp-arrow">→</span></div>
-    </a>
-    <a class="space-row" href="/email-analytics.html">
-      <div><div class="sp-name">Email Analytics</div><div class="sp-sub">Front Reports</div></div>
-      <div class="sp-desc">Upload or paste Front email reports. AI extracts KPIs, key takeaways by category, and generates prioritised action items automatically.</div>
-      <div class="sp-right"><span class="badge">AI-powered</span><span class="sp-arrow">→</span></div>
-    </a>
-    <a class="space-row" href="/weekly-rhythm.html">
-      <div><div class="sp-name">Weekly Rhythm</div><div class="sp-sub">Friday + Monday</div></div>
-      <div class="sp-desc">Friday lookback and Monday outlook. Structured input with AI-generated reflection and planning. Archived for pattern recognition.</div>
-      <div class="sp-right"><span class="badge" id="rhythmB">—</span><span class="sp-arrow">→</span></div>
-    </a>
-    <a class="space-row" href="/crm-hubspot.html">
-      <div><div class="sp-name">CRM / HubSpot</div><div class="sp-sub">Implementation PM</div></div>
-      <div class="sp-desc">HubSpot CRM rollout dashboard. Timeline, decision log, AI-generated executive PM briefings.</div>
-      <div class="sp-right"><span class="badge" id="badgeCrm">—</span><span class="sp-arrow">→</span></div>
-    </a>
+    <div id="spaceRows"></div>
   </div>
 
   <div class="sec">
@@ -254,14 +225,36 @@ async function tog(id){const t=tasks.find(x=>x.id===id);if(!t)return;try{await A
 async function del(id){try{await API.deleteTask(id);await loadData();}catch(e){console.error(e);}}
 function setBadge(id,text,red){const el=document.getElementById(id);if(!el)return;el.textContent=text;el.className=red?'badge red':'badge';}
 
+function buildSpaceRows(spaces){
+  const container=document.getElementById('spaceRows');
+  if(!container||!spaces)return;
+  container.innerHTML='';
+  spaces.forEach(sp=>{
+    const a=document.createElement('a');
+    a.className='space-row';a.href=sp.href;
+    const sub=sp.sub_id
+      ?`<div class="sp-sub" id="${sp.sub_id}">— Direct Reports</div>`
+      :`<div class="sp-sub">${sp.sub||''}</div>`;
+    const badge=sp.badge_id
+      ?`<span class="badge" id="${sp.badge_id}">—</span>`
+      :`<span class="badge">${sp.badge_static||''}</span>`;
+    a.innerHTML=`<div><div class="sp-name">${sp.name}</div>${sub}</div><div class="sp-desc">${sp.desc||''}</div><div class="sp-right">${badge}<span class="sp-arrow">→</span></div>`;
+    container.appendChild(a);
+  });
+}
+
 async function loadData(){
   try{
-    const [tasksData,spocData,teamData,projectsData]=await Promise.all([API.getTasks(false),API.getSpoc(),API.getTeam(),API.getProjects()]);
+    const [tasksData,spocData,teamData,projectsData,cfgData]=await Promise.all([API.getTasks(false),API.getSpoc(),API.getTeam(),API.getProjects(),API.getConfig()]);
     tasks=tasksData.tasks||[];
     const team=teamData.team||[];
     const projects=projectsData.projects||[];
     const spoc=spocData.spoc_log||[];
+    const cfg=cfgData||{};
     const today=new Date();
+    if(cfg.org){document.getElementById('orgEyebrow').textContent=`${cfg.org} — ${cfg.org_subtitle||'Personal OS'}`;}
+    if(cfg.ollama_base)OLLAMA_BASE=cfg.ollama_base;
+    if(cfg.spaces)buildSpaceRows(cfg.spaces);
     document.getElementById('statMembers').textContent=team.length||'—';
     const active=projects.filter(p=>p.status!=='done');
     const blocked=projects.filter(p=>p.status==='blocked');
@@ -273,15 +266,16 @@ async function loadData(){
     if(urgent>0)setBadge('badgeSpoc',urgent+' Urgent',true);
     else if(open>0)setBadge('badgeSpoc',open+' Open',false);
     else setBadge('badgeSpoc','All clear',false);
-    document.getElementById('teamSub').textContent=team.length+' Direct Reports';
+    const teamSub=document.getElementById('teamSub');
+    if(teamSub)teamSub.textContent=team.length+' Direct Reports';
     const needAttention=team.filter(m=>{if(m.health<=6)return true;if(m.lastCheck){const d=(today-new Date(m.lastCheck))/(1000*60*60*24);if(d>7)return true;}return false;});
     if(needAttention.length>0)setBadge('badgeTeam',needAttention.length+' Need attention',true);
     else setBadge('badgeTeam','All good',false);
     if(blocked.length>0)setBadge('badgeProjects',blocked.length+' Blocked',true);
     else if(active.length>0)setBadge('badgeProjects',active.length+' Active',false);
     else setBadge('badgeProjects','All done',false);
-    const hs=projects.find(p=>p.id==='hubspot');
-    if(hs){const statusMap={ontrack:'On track',atrisk:'At risk',blocked:'Blocked',done:'Done'};setBadge('badgeCrm',statusMap[hs.status]||hs.status,hs.status==='atrisk'||hs.status==='blocked');}
+    const crm=projects.find(p=>p.id==='hubspot');
+    if(crm){const statusMap={ontrack:'On track',atrisk:'At risk',blocked:'Blocked',done:'Done'};setBadge('badgeCrm',statusMap[crm.status]||crm.status,crm.status==='atrisk'||crm.status==='blocked');}
     hideOfflineBanner();
   }catch(e){showOfflineBanner();console.error('API error:',e);}
   const day=new Date().getDay();
@@ -294,7 +288,7 @@ startAutoRefresh(loadData,30000);
 
 // ── Model switcher ────────────────────────────────────────────────────────────
 const MODEL_KEY = 'ls-model';
-const OLLAMA_BASE = 'http://localhost:11434';
+let OLLAMA_BASE = 'http://localhost:11434';
 
 function getModel(){
   return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';
