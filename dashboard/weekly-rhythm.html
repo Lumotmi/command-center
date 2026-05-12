@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Rhythm — Livesystems AG</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f0eb;--surface:#fff;--ink:#0e0e0e;--ink-2:#3a3a3a;--ink-3:#888;--ink-4:#bbb;--accent:#d63a2f;--accent-dim:rgba(214,58,47,.1);--border:#d8d4cc;--border-dark:#0e0e0e;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 40px;}
+.topbar{border-bottom:2px solid var(--border-dark);position:sticky;top:0;z-index:100;background:var(--bg);}
+.tb{max-width:1080px;margin:0 auto;padding:0 40px;display:flex;align-items:stretch;height:52px;}
+.tb-logo{font-family:var(--display);font-size:22px;letter-spacing:.04em;display:flex;align-items:center;padding-right:28px;border-right:1px solid var(--border);color:var(--ink);text-decoration:none;}
+.tb-logo span{color:var(--accent);}
+.tb-nav{display:flex;align-items:stretch;}
+.tb-nav a{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-decoration:none;display:flex;align-items:center;padding:0 18px;border-right:1px solid var(--border);transition:color .15s,background .15s;}
+.tb-nav a:hover{color:var(--ink);background:rgba(0,0,0,.03);}
+.tb-nav a.cur{color:var(--accent);}
+.tb-right{display:flex;align-items:center;gap:16px;margin-left:auto;}
+.tb-date{font-family:var(--mono);font-size:10px;color:var(--ink-3);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.page-hero{padding:52px 0 40px;border-bottom:1px solid var(--border);}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;}
+.page-title{font-family:var(--display);font-size:72px;line-height:.9;letter-spacing:.02em;}
+.page-title span{color:var(--accent);}
+.page-sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:14px;}
+
+/* mode switcher */
+.mode-switcher{display:flex;border:1px solid var(--border-dark);width:fit-content;margin-bottom:32px;}
+.mode-btn{padding:11px 28px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--ink-3);border-right:1px solid var(--border-dark);transition:all .15s;}
+.mode-btn:last-child{border-right:none;}
+.mode-btn:hover{color:var(--ink);background:rgba(0,0,0,.03);}
+.mode-btn.active{background:var(--ink);color:#fff;}
+
+.sec{padding:40px 0;border-bottom:1px solid var(--border);}
+.sec:last-child{border-bottom:none;padding-bottom:80px;}
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:20px;}
+
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* form fields */
+.field-label{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px;margin-top:18px;}
+.field-label:first-child{margin-top:0;}
+textarea.field,input.field,select.field{width:100%;background:var(--surface);border:1px solid var(--border);padding:12px 14px;font-family:var(--mono);font-size:11px;color:var(--ink);line-height:1.6;outline:none;resize:vertical;transition:border-color .15s;-webkit-appearance:none;}
+textarea.field:focus,input.field:focus{border-color:var(--border-dark);}
+textarea.field::placeholder,input.field::placeholder{color:var(--ink-4);}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.btn-row{display:flex;gap:8px;margin-top:16px;}
+.btn{padding:10px 20px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover{background:var(--accent);}
+.btn-primary:disabled{opacity:.4;cursor:default;}
+.btn-ghost{background:transparent;border:1px solid var(--border-dark);color:var(--ink);}
+.btn-ghost:hover{background:rgba(0,0,0,.04);}
+
+/* energy slider */
+.slider-row{display:flex;align-items:center;gap:12px;margin-top:8px;}
+.slider{flex:1;-webkit-appearance:none;height:3px;background:var(--border);outline:none;border-radius:0;}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--ink);cursor:pointer;}
+.slider-val{font-family:var(--display);font-size:22px;color:var(--accent);min-width:28px;}
+
+/* results */
+.result-sec{margin-top:32px;padding-top:32px;border-top:1px solid var(--border);display:none;}
+.result-sec.show{display:block;}
+.result-list{margin-bottom:20px;}
+.result-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.result-item:last-child{border-bottom:none;}
+.ri-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.ri-text{font-size:12px;color:var(--ink-2);line-height:1.6;font-weight:300;}
+.focus-n{font-family:var(--display);font-size:22px;color:var(--ink-4);flex-shrink:0;line-height:1;}
+.output-full{background:var(--surface);border:1px solid var(--border);padding:16px;font-size:12px;line-height:1.9;color:var(--ink-2);white-space:pre-wrap;font-weight:300;}
+
+/* archive */
+.arch-item{padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:baseline;gap:16px;}
+.arch-item:last-child{border-bottom:none;}
+.arch-item:hover .arch-date{color:var(--accent);}
+.arch-type{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border:1px solid var(--border-dark);color:var(--ink-3);flex-shrink:0;}
+.arch-date{font-family:var(--mono);font-size:10px;color:var(--ink-3);flex-shrink:0;transition:color .15s;}
+.arch-preview{font-size:12px;color:var(--ink-2);font-weight:300;}
+
+/* two-result grid */
+.two-result{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;}
+
+/* model selector */
+.model-sel-wrap{position:relative;display:flex;align-items:center;}
+.model-sel{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;background:transparent;border:1px solid var(--border);color:var(--ink-3);padding:5px 26px 5px 9px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;transition:all .15s;}
+.model-sel:hover,.model-sel:focus{border-color:var(--border-dark);color:var(--ink);}
+.model-sel.local{border-color:#2a7a2a;color:#2a7a2a;}
+.model-sel-arrow{position:absolute;right:7px;pointer-events:none;font-size:8px;color:var(--ink-3);}
+.model-indicator{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.model-indicator.cloud{background:var(--accent);}
+.model-indicator.local{background:#2a7a2a;}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="tb">
+    <a class="tb-logo" href="command-center.html">LS<span>.</span>AG</a>
+    <nav class="tb-nav">
+      <a href="spoc-hub.html">SPOC</a>
+      <a href="team-lead.html">Team</a>
+      <a href="project-hub.html">Projects</a>
+      <a href="email-analytics.html">Analytics</a>
+      <a href="weekly-rhythm.html" class="cur">Rhythm</a>
+      <a href="crm-hubspot.html">CRM</a>
+    </nav>
+    <div class="tb-right">
+      <div class="model-sel-wrap">
+        <select class="model-sel" id="modelSel" onchange="onModelChange()">
+<optgroup label="Local (Ollama)">
+            <option value="local|glm-4.7-flash:latest">GLM-4.7 Flash ⚡</option>
+            <option value="local|qwen3.6:latest">Qwen3.6</option>
+            <option value="local|qwen3:14b">Qwen3 14b</option>
+          </optgroup>
+        </select>
+        <span class="model-sel-arrow">▾</span>
+      </div>
+      <div class="model-indicator cloud" id="modelDot" title="Model routing indicator"></div>
+      <div class="tb-date" id="topDate"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="page-hero">
+    <div class="eyebrow">Reflection & Planning</div>
+    <div class="page-title">WEEKLY<br><span>Rhythm</span></div>
+    <div class="page-sub">Friday lookback · Monday outlook · AI-generated analysis · Pattern archive</div>
+  </div>
+
+  <div class="sec">
+    <div class="mode-switcher">
+      <button class="mode-btn" id="btnFri" onclick="setMode('friday')">Friday Lookback</button>
+      <button class="mode-btn" id="btnMon" onclick="setMode('monday')">Monday Outlook</button>
+      <button class="mode-btn" id="btnArc" onclick="setMode('archive')">Archive</button>
+    </div>
+
+    <!-- FRIDAY -->
+    <div class="panel" id="panelFriday">
+      <div class="sec-label">Week review</div>
+      <div class="two">
+        <div>
+          <div class="field-label">Week of</div>
+          <input class="field" id="f-week" placeholder="e.g. 5–9 May 2026">
+          <div class="field-label">Energy this week (1–10)</div>
+          <div class="slider-row">
+            <input type="range" class="slider" id="f-energy" min="1" max="10" value="7" oninput="document.getElementById('fEV').textContent=this.value">
+            <span class="slider-val" id="fEV">7</span>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Top wins & accomplishments</div>
+          <textarea class="field" id="f-wins" rows="4" placeholder="Completed tasks, milestones, strong interactions..."></textarea>
+        </div>
+      </div>
+      <div class="two" style="margin-top:18px;">
+        <div>
+          <div class="field-label">What didn't go as planned?</div>
+          <textarea class="field" id="f-challenges" rows="3" placeholder="Blockers, delays, missed goals..."></textarea>
+        </div>
+        <div>
+          <div class="field-label">SPOC / Post CH AG highlights</div>
+          <textarea class="field" id="f-spoc" rows="3" placeholder="Key interactions, decisions, escalations..."></textarea>
+        </div>
+      </div>
+      <div class="two" style="margin-top:18px;">
+        <div>
+          <div class="field-label">Team observations</div>
+          <textarea class="field" id="f-team" rows="3" placeholder="Team mood, standouts, concerns..."></textarea>
+        </div>
+        <div>
+          <div class="field-label">Other notes</div>
+          <textarea class="field" id="f-other" rows="3" placeholder="Ideas, follow-ups, random thoughts..."></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="lookbackBtn" onclick="genLookback()">Generate Friday lookback</button>
+        <button class="btn btn-ghost" onclick="clearFriday()">Clear</button>
+      </div>
+
+      <div class="result-sec" id="lookbackResult">
+        <div class="two-result">
+          <div>
+            <div class="sec-label">Wins</div>
+            <div id="winsList"></div>
+          </div>
+          <div>
+            <div class="sec-label">Learnings & carry-forward</div>
+            <div id="learnList"></div>
+          </div>
+        </div>
+        <div class="sec-label">AI Reflection</div>
+        <div class="output-full" id="lookbackFull"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('lookbackFull').textContent).then(()=>alert('Copied!'))">Copy</button>
+          <button class="btn btn-ghost" onclick="saveWeek('friday')">Save to archive</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONDAY -->
+    <div class="panel" id="panelMonday">
+      <div class="sec-label">Week setup</div>
+      <div class="two">
+        <div>
+          <div class="field-label">Week of</div>
+          <input class="field" id="m-week" placeholder="e.g. 12–16 May 2026">
+          <div class="field-label">Energy entering week (1–10)</div>
+          <div class="slider-row">
+            <input type="range" class="slider" id="m-energy" min="1" max="10" value="7" oninput="document.getElementById('mEV').textContent=this.value">
+            <span class="slider-val" id="mEV">7</span>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Top 3 priorities (non-negotiables)</div>
+          <textarea class="field" id="m-priorities" rows="4" placeholder="1. ...\n2. ...\n3. ..."></textarea>
+        </div>
+      </div>
+      <div class="two" style="margin-top:18px;">
+        <div>
+          <div class="field-label">Key meetings & deadlines</div>
+          <textarea class="field" id="m-meetings" rows="3" placeholder="Deliverables, milestones, calls..."></textarea>
+        </div>
+        <div>
+          <div class="field-label">Known blockers & risks</div>
+          <textarea class="field" id="m-risks" rows="3" placeholder="Things that could derail the week..."></textarea>
+        </div>
+      </div>
+      <div class="two" style="margin-top:18px;">
+        <div>
+          <div class="field-label">SPOC items pending</div>
+          <textarea class="field" id="m-spoc" rows="3" placeholder="Post CH AG items to resolve..."></textarea>
+        </div>
+        <div>
+          <div class="field-label">What does a successful week look like?</div>
+          <textarea class="field" id="m-success" rows="3" placeholder="Define your win condition..."></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="outlookBtn" onclick="genOutlook()">Generate Monday outlook</button>
+        <button class="btn btn-ghost" onclick="clearMonday()">Clear</button>
+      </div>
+
+      <div class="result-sec" id="outlookResult">
+        <div class="sec-label">Focus plan</div>
+        <div id="focusList" style="margin-bottom:24px;"></div>
+        <div class="sec-label">AI Outlook</div>
+        <div class="output-full" id="outlookFull"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('outlookFull').textContent).then(()=>alert('Copied!'))">Copy</button>
+          <button class="btn btn-ghost" onclick="saveWeek('monday')">Save to archive</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARCHIVE -->
+    <div class="panel" id="panelArchive">
+      <div class="sec-label">Weekly archive</div>
+      <div id="archiveList"><div style="font-family:var(--mono);font-size:11px;color:var(--ink-4);">No archived weeks yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const now=new Date();
+const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('topDate').textContent=`${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+let archive=JSON.parse(localStorage.getItem('weekly-arch')||'null');
+
+function setMode(m){
+  ['btnFri','btnMon','btnArc'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  ['panelFriday','panelMonday','panelArchive'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  const map={friday:['btnFri','panelFriday'],monday:['btnMon','panelMonday'],archive:['btnArc','panelArchive']};
+  map[m].forEach(id=>document.getElementById(id).classList.add('active'));
+  if(m==='archive')renderArchive();
+}
+
+function autoMode(){const d=now.getDay();if(d===5)setMode('friday');else if(d===1)setMode('monday');else setMode('friday');}
+
+async function genLookback(){
+  const wins=document.getElementById('f-wins').value;
+  const challenges=document.getElementById('f-challenges').value;
+  if(!wins&&!challenges){alert('Fill in wins and challenges first.');return;}
+  const btn=document.getElementById('lookbackBtn');btn.disabled=true;btn.textContent='Generating...';
+  document.getElementById('lookbackResult').classList.add('show');
+  document.getElementById('lookbackFull').textContent='Generating...';
+  try{
+    const _lbRaw=await callAI(`You are a thoughtful executive coach for a senior manager at Livesystems AG (SPOC with Post CH AG, leads 6 people, PM for HubSpot CRM).\n\nGenerate a Friday lookback. Return ONLY valid JSON with no explanation or markdown:\n{"wins":["win 1","win 2","win 3"],"learnings":["learning 1","learning 2","learning 3"],"reflection":"3-4 paragraph reflection. Acknowledge real challenges. Surface patterns. End with one energising thought for the weekend."}\n\nWeek: ${document.getElementById('f-week').value}\nEnergy: ${document.getElementById('f-energy').value}/10\nWins: ${wins}\nChallenges: ${challenges}\nSPOC notes: ${document.getElementById('f-spoc').value}\nTeam: ${document.getElementById('f-team').value}\nOther: ${document.getElementById('f-other').value}`,2000);
+    const r=safeJSON(_lbRaw);
+    document.getElementById('winsList').innerHTML=(r.wins||[]).map(w=>`<div class="result-item"><span class="ri-icon">✓</span><div class="ri-text">${w}</div></div>`).join('');
+    document.getElementById('learnList').innerHTML=(r.learnings||[]).map(l=>`<div class="result-item"><span class="ri-icon">→</span><div class="ri-text">${l}</div></div>`).join('');
+    document.getElementById('lookbackFull').textContent=r.reflection||'';
+  }catch(e){document.getElementById('lookbackFull').textContent='Generation failed: '+e.message;}
+  btn.disabled=false;btn.textContent='Generate Friday lookback';
+}
+
+async function genOutlook(){
+  const priorities=document.getElementById('m-priorities').value;
+  if(!priorities){alert('Fill in your priorities first.');return;}
+  const btn=document.getElementById('outlookBtn');btn.disabled=true;btn.textContent='Generating...';
+  document.getElementById('outlookResult').classList.add('show');
+  document.getElementById('outlookFull').textContent='Generating...';
+  try{
+    const _olRaw=await callAI(`You are a strategic coach for a senior manager at Livesystems AG. Help them set up their week.\n\nReturn ONLY valid JSON with no explanation or markdown:\n{"focusPlan":[{"priority":1,"item":"Main focus","rationale":"Why #1"},{"priority":2,"item":"Second","rationale":"Why"},{"priority":3,"item":"Third","rationale":"Why"}],"outlook":"3-4 paragraph Monday outlook. Address risks directly. Suggest how to protect time and energy. End with a clear framing for how to start the day."}\n\nWeek: ${document.getElementById('m-week').value}\nEnergy: ${document.getElementById('m-energy').value}/10\nPriorities: ${priorities}\nMeetings: ${document.getElementById('m-meetings').value}\nRisks: ${document.getElementById('m-risks').value}\nSPOC: ${document.getElementById('m-spoc').value}\nSuccess: ${document.getElementById('m-success').value}`,2000);
+    const r=safeJSON(_olRaw);
+    document.getElementById('focusList').innerHTML=(r.focusPlan||[]).map(f=>`<div class="result-item"><div class="focus-n">0${f.priority}</div><div class="ri-text"><strong>${f.item}</strong><br>${f.rationale}</div></div>`).join('');
+    document.getElementById('outlookFull').textContent=r.outlook||'';
+  }catch(e){document.getElementById('outlookFull').textContent='Generation failed: '+e.message;}
+  btn.disabled=false;btn.textContent='Generate Monday outlook';
+}
+
+function saveWeek(type){
+  const id=type==='friday'?'lookbackFull':'outlookFull';
+  const content=document.getElementById(id).textContent;
+  if(!content||content==='Generating...')return;
+  archive.unshift({type,date:new Date().toISOString().split('T')[0],preview:content.slice(0,100)+'...',content});
+  if(archive.length>52)archive=archive.slice(0,52);
+  localStorage.setItem('weekly-arch',JSON.stringify(archive));
+  alert('Saved to archive!');
+}
+
+function renderArchive(){
+  const el=document.getElementById('archiveList');
+  if(!archive.length){el.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--ink-4);">No archived weeks yet.</div>';return;}
+  el.innerHTML=archive.map(a=>`<div class="arch-item"><span class="arch-type">${a.type==='friday'?'Lookback':'Outlook'}</span><span class="arch-date">${a.date}</span><div class="arch-preview">${a.preview}</div></div>`).join('');
+}
+
+function clearFriday(){['f-week','f-wins','f-challenges','f-spoc','f-team','f-other'].forEach(id=>document.getElementById(id).value='');document.getElementById('lookbackResult').classList.remove('show');}
+function clearMonday(){['m-week','m-priorities','m-meetings','m-risks','m-spoc','m-success'].forEach(id=>document.getElementById(id).value='');document.getElementById('outlookResult').classList.remove('show');}
+
+async function initData(){
+  if(archive===null){
+    try{
+      const r=await fetch('/data.json?t='+Date.now());
+      const d=await r.json();
+      archive=d.weekly_archive||[];
+    }catch(e){archive=[];}
+  }
+  autoMode();
+}
+initData();
+
+// ── Model switcher ────────────────────────────────────────────────────────────
+const MODEL_KEY = 'ls-model';
+const OLLAMA_BASE = 'http://localhost:11434';
+
+function getModel(){
+  return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';
+}
+
+function onModelChange(){
+  const val = document.getElementById('modelSel')?.value;
+  if(val){ localStorage.setItem(MODEL_KEY, val); updateModelUI(); }
+}
+
+function updateModelUI(){
+  const val = getModel();
+  const [type] = val.split('|');
+  const sel = document.getElementById('modelSel');
+  const dot = document.getElementById('modelDot');
+  if(sel) sel.value = val;
+  if(dot){ dot.className = 'model-indicator ' + (type==='local'?'local':'cloud'); }
+  if(sel){ sel.className = 'model-sel' + (type==='local'?' local':''); }
+}
+
+// Drop-in replacement for every API call in the dashboards.
+// Usage: const data = await callAI(systemOrUserPrompt, maxTokens)
+async function callAI(prompt, maxTokens=1000){
+  const val = getModel();
+  const [type, model] = val.split('|');
+
+  if(type === 'local'){
+    // Ollama OpenAI-compatible endpoint
+    const res = await fetch(`${OLLAMA_BASE}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if(!res.ok){
+      const err = await res.text();
+      throw new Error(`Ollama error ${res.status}: ${err.slice(0,200)}`);
+    }
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content;
+    if(!text) throw new Error('Ollama returned no content. Is the model loaded? Run: ollama run ' + model);
+    return text;
+
+  } else {
+    // Anthropic cloud
+    const apiKey = localStorage.getItem('ls-api-key') || '';
+    if(!apiKey){ throw new Error('No Anthropic API key set. Click the key icon (🔑) in the toolbar to add it.'); }
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if(!res.ok || data.error){
+      throw new Error(data.error?.message || `HTTP ${res.status}`);
+    }
+    const block = Array.isArray(data.content) && data.content.find(c => c.type === 'text');
+    if(!block?.text) throw new Error('API returned no text content');
+    return block.text;
+  }
+}
+
+// Helper: parse JSON safely from model output (strips markdown fences)
+function safeJSON(raw){
+  if(!raw) return null;
+  const cleaned = raw.replace(/^```json\s*/i,'').replace(/^```/,'').replace(/```\s*$/,'').trim();
+  const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+  if(s===-1||e===-1) throw new Error('No JSON object found in response');
+  return JSON.parse(cleaned.slice(s, e+1));
+}
+
+// Init on page load
+document.addEventListener('DOMContentLoaded', updateModelUI);
+// Also init immediately in case DOMContentLoaded already fired
+updateModelUI();
+
+</script>
+</body>
+</html>

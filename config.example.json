@@ -1,0 +1,27 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "last_updated": "2026-05-11T00:00:00Z",
+    "updated_by": "claude-code-setup",
+    "description": "Livesystems AG workspace data store."
+  },
+  "tasks": [],
+  "team": [
+    {"id": "af", "name": "Alina Füllemann", "role": "Sales Operations", "avatar": "AF", "color": "#4d9fff", "health": 10, "lastCheck": "2026-05-11", "moods": [], "notes": []},
+    {"id": "fk", "name": "Fabio Keller", "role": "Sales Coordination", "avatar": "FK", "color": "#4ade80", "health": 10, "lastCheck": "2026-05-11", "moods": [], "notes": []},
+    {"id": "la", "name": "Larissa Aebischer", "role": "Sales Coordination", "avatar": "LA", "color": "#e879f9", "health": 10, "lastCheck": "2026-05-11", "moods": [], "notes": []},
+    {"id": "ss", "name": "Saskia Schweizer", "role": "Sales Coordination", "avatar": "SS", "color": "#ffc94d", "health": 10, "lastCheck": "2026-05-11", "moods": [], "notes": []},
+    {"id": "kb", "name": "Kathrin Brändle", "role": "Sales Coordination", "avatar": "KB", "color": "#00e5c3", "health": 10, "lastCheck": "2026-05-11", "moods": [], "notes": []},
+    {"id": "bu", "name": "Bastri Uruglica", "role": "Sales Coordination", "avatar": "BU", "color": "#ff6b6b", "health": 10, "lastCheck": "2026-05-11", "moods": [], "notes": []}
+  ],
+  "spoc_log": [],
+  "projects": [
+    {"id": "hubspot", "name": "HubSpot CRM", "role": "Project Manager", "status": "ontrack", "progress": 0, "color": "#ff6b6b", "desc": "", "tags": [], "milestones": [], "notes": []},
+    {"id": "oms", "name": "Order Management System", "role": "Project Manager", "status": "ontrack", "progress": 0, "color": "#ffc94d", "desc": "", "tags": [], "milestones": [], "notes": []},
+    {"id": "aiplan", "name": "AI Planning Tool OOH", "role": "Project Manager", "status": "ontrack", "progress": 0, "color": "#4ade80", "desc": "", "tags": [], "milestones": [], "notes": []}
+  ],
+  "weekly_archive": [],
+  "email_history": [],
+  "reminders": [],
+  "crm_decisions": []
+}

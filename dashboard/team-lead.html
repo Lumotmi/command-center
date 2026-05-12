@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Lead — Livesystems AG</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f0eb;--surface:#fff;--ink:#0e0e0e;--ink-2:#3a3a3a;--ink-3:#888;--ink-4:#bbb;--accent:#d63a2f;--accent-dim:rgba(214,58,47,.1);--border:#d8d4cc;--border-dark:#0e0e0e;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 40px;}
+.topbar{border-bottom:2px solid var(--border-dark);position:sticky;top:0;z-index:100;background:var(--bg);}
+.tb{max-width:1080px;margin:0 auto;padding:0 40px;display:flex;align-items:stretch;height:52px;}
+.tb-logo{font-family:var(--display);font-size:22px;letter-spacing:.04em;display:flex;align-items:center;padding-right:28px;border-right:1px solid var(--border);color:var(--ink);text-decoration:none;}
+.tb-logo span{color:var(--accent);}
+.tb-nav{display:flex;align-items:stretch;}
+.tb-nav a{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-decoration:none;display:flex;align-items:center;padding:0 18px;border-right:1px solid var(--border);transition:color .15s,background .15s;}
+.tb-nav a:hover{color:var(--ink);background:rgba(0,0,0,.03);}
+.tb-nav a.cur{color:var(--accent);}
+.tb-right{display:flex;align-items:center;gap:16px;margin-left:auto;}
+.tb-date{font-family:var(--mono);font-size:10px;color:var(--ink-3);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.page-hero{padding:52px 0 40px;border-bottom:1px solid var(--border);}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;}
+.page-title{font-family:var(--display);font-size:72px;line-height:.9;letter-spacing:.02em;}
+.page-title span{color:var(--accent);}
+.page-sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:14px;}
+
+.sec{padding:40px 0;border-bottom:1px solid var(--border);}
+.sec:last-child{border-bottom:none;padding-bottom:80px;}
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:20px;}
+
+.stats-row{display:flex;border:1px solid var(--border-dark);}
+.stat{padding:16px 28px;border-right:1px solid var(--border-dark);}
+.stat:last-child{border-right:none;}
+.stat-v{font-family:var(--display);font-size:34px;line-height:1;}
+.stat-v.r{color:var(--accent);}
+.stat-v.ok{color:#2a7a2a;}
+.stat-l{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-top:4px;}
+
+/* member table */
+.member-table{width:100%;border-collapse:collapse;border:1px solid var(--border-dark);}
+.member-table th{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:10px 16px;border-bottom:1px solid var(--border-dark);text-align:left;background:var(--ink);color:#fff;font-weight:400;}
+.member-table td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.member-table tr:last-child td{border-bottom:none;}
+.member-table tr:hover td{background:rgba(0,0,0,.02);}
+.m-name{font-family:var(--display);font-size:18px;letter-spacing:.03em;}
+.m-role{font-family:var(--mono);font-size:9px;color:var(--ink-3);letter-spacing:.06em;margin-top:2px;}
+.health-wrap{display:flex;align-items:center;gap:10px;}
+.health-bar-bg{flex:1;height:3px;background:var(--border);}
+.health-fill{height:3px;transition:width .5s;}
+.health-num{font-family:var(--mono);font-size:11px;width:28px;}
+.health-num.ok{color:#2a7a2a;}
+.health-num.warn{color:#8a6a00;}
+.health-num.low{color:var(--accent);}
+.last-check{font-family:var(--mono);font-size:10px;color:var(--ink-3);}
+.last-check.overdue{color:var(--accent);}
+.m-note{font-size:11px;color:var(--ink-3);font-style:italic;max-width:220px;}
+.act-btn{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border:1px solid var(--border-dark);background:transparent;cursor:pointer;transition:all .15s;}
+.act-btn:hover{background:var(--ink);color:#fff;}
+
+/* two col */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:32px;}
+
+/* checkin panel */
+.panel-box{border:1px solid var(--border-dark);}
+.panel-head{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--ink);}
+.panel-head-txt{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#fff;}
+.panel-body{padding:16px;}
+select.field,input.field,textarea.field{width:100%;background:var(--surface);border:1px solid var(--border);padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--ink);outline:none;transition:border-color .15s;-webkit-appearance:none;resize:none;}
+select.field:focus,input.field:focus,textarea.field:focus{border-color:var(--border-dark);}
+.field-label{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px;margin-top:10px;}
+.field-label:first-child{margin-top:0;}
+.btn{padding:10px 20px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;transition:all .15s;margin-top:10px;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover{background:var(--accent);}
+.btn-primary:disabled{opacity:.4;cursor:default;}
+.btn-ghost{background:transparent;border:1px solid var(--border-dark);color:var(--ink);}
+.btn-ghost:hover{background:rgba(0,0,0,.04);}
+.output-box{background:var(--surface);border:1px solid var(--border);padding:14px;font-size:12px;line-height:1.7;color:var(--ink-2);white-space:pre-wrap;margin-top:10px;min-height:80px;font-family:var(--sans);font-weight:300;}
+.btn-row{display:flex;gap:8px;}
+
+/* recurring tasks */
+.task-row{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);}
+.task-row:last-child{border-bottom:none;}
+.freq-tag{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--border);color:var(--ink-3);flex-shrink:0;margin-top:2px;}
+.freq-tag.weekly{border-color:var(--border-dark);color:var(--ink);}
+.freq-tag.daily{border-color:var(--accent);color:var(--accent);}
+.task-body{flex:1;}
+.task-title{font-size:13px;font-weight:500;color:var(--ink);}
+.task-desc{font-size:11px;color:var(--ink-3);margin-top:3px;font-weight:300;}
+.task-cb{width:18px;height:18px;border:1px solid var(--border-dark);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px;transition:all .15s;}
+.task-cb.done{background:var(--ink);color:#fff;}
+.task-row.done-row .task-title{text-decoration:line-through;color:var(--ink-4);}
+
+/* model selector */
+.model-sel-wrap{position:relative;display:flex;align-items:center;}
+.model-sel{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;background:transparent;border:1px solid var(--border);color:var(--ink-3);padding:5px 26px 5px 9px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;transition:all .15s;}
+.model-sel:hover,.model-sel:focus{border-color:var(--border-dark);color:var(--ink);}
+.model-sel.local{border-color:#2a7a2a;color:#2a7a2a;}
+.model-sel-arrow{position:absolute;right:7px;pointer-events:none;font-size:8px;color:var(--ink-3);}
+.model-indicator{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.model-indicator.cloud{background:var(--accent);}
+.model-indicator.local{background:#2a7a2a;}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="tb">
+    <a class="tb-logo" href="command-center.html">LS<span>.</span>AG</a>
+    <nav class="tb-nav">
+      <a href="spoc-hub.html">SPOC</a>
+      <a href="team-lead.html" class="cur">Team</a>
+      <a href="project-hub.html">Projects</a>
+      <a href="email-analytics.html">Analytics</a>
+      <a href="weekly-rhythm.html">Rhythm</a>
+      <a href="crm-hubspot.html">CRM</a>
+    </nav>
+    <div class="tb-right">
+      <div class="model-sel-wrap">
+        <select class="model-sel" id="modelSel" onchange="onModelChange()">
+<optgroup label="Local (Ollama)">
+            <option value="local|glm-4.7-flash:latest">GLM-4.7 Flash ⚡</option>
+            <option value="local|qwen3.6:latest">Qwen3.6</option>
+            <option value="local|qwen3:14b">Qwen3 14b</option>
+          </optgroup>
+        </select>
+        <span class="model-sel-arrow">▾</span>
+      </div>
+      <div class="model-indicator cloud" id="modelDot" title="Model routing indicator"></div>
+      <div class="tb-date" id="topDate"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="page-hero">
+    <div class="eyebrow">People Management</div>
+    <div class="page-title">TEAM<br><span>Lead</span></div>
+    <div class="page-sub">Sales Operations (1) + Sales Coordination / Inside Sales (5) · Health tracking · Check-ins · Recurring tasks</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">Overview</div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-v" id="avgH">—</div><div class="stat-l">Avg health</div></div>
+      <div class="stat"><div class="stat-v r" id="lowH">—</div><div class="stat-l">Need attention</div></div>
+      <div class="stat"><div class="stat-v ok" id="checkDone">—</div><div class="stat-l">Checked in</div></div>
+      <div class="stat"><div class="stat-v">6</div><div class="stat-l">Total reports</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">Team members</div>
+    <table class="member-table" id="memberTable">
+      <thead><tr>
+        <th>Name</th><th>Health</th><th>Last check-in</th><th>Note</th><th>Action</th>
+      </tr></thead>
+      <tbody id="memberBody"></tbody>
+    </table>
+  </div>
+
+  <div class="sec">
+    <div class="two">
+      <div>
+        <div class="sec-label">AI check-in generator</div>
+        <div class="panel-box">
+          <div class="panel-head"><div class="panel-head-txt">Generate questions</div></div>
+          <div class="panel-body">
+            <div class="field-label">Team member</div>
+            <select class="field" id="memberSel"><option value="">Select member...</option></select>
+            <div class="field-label">Type</div>
+            <select class="field" id="checkinType">
+              <option value="weekly">Weekly check-in</option>
+              <option value="1on1">1:1 conversation</option>
+              <option value="pulse">Quick pulse check</option>
+            </select>
+            <div class="btn-row" style="margin-top:10px;">
+              <button class="btn btn-primary" id="genBtn" onclick="genCheckin()" style="margin-top:0;">Generate</button>
+              <button class="btn btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('checkinOut').textContent)" style="margin-top:0;">Copy</button>
+            </div>
+            <div class="output-box" id="checkinOut">Select a member and type, then generate.</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="sec-label">1:1 notes</div>
+        <div class="panel-box">
+          <div class="panel-head"><div class="panel-head-txt">Log meeting notes</div></div>
+          <div class="panel-body">
+            <div class="field-label">Member</div>
+            <select class="field" id="notesMember"><option value="">Select member...</option></select>
+            <div class="field-label">Notes</div>
+            <textarea class="field" id="meetingNotes" rows="5" placeholder="Notes from today's 1:1 or check-in..."></textarea>
+            <div class="btn-row" style="margin-top:10px;">
+              <button class="btn btn-primary" onclick="saveNotes()" style="margin-top:0;">Save notes</button>
+              <button class="btn btn-ghost" onclick="showHistory()" style="margin-top:0;">History</button>
+            </div>
+            <div id="histArea"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">Recurring tasks</div>
+    <div id="recurringList"></div>
+    <button class="btn btn-ghost" style="margin-top:16px;" onclick="if(confirm('Reset weekly tasks?')){taskStates={};localStorage.setItem('team-tasks','{}');renderRecurring();}">Reset weekly tasks</button>
+  </div>
+</div>
+
+<script>
+const now=new Date();
+const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('topDate').textContent=`${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+let team=[];
+
+const recurring=[
+  {id:1,title:'Weekly team async check-in',desc:'Send check-in message to all 6 reports. How are they doing, any blockers?',freq:'weekly'},
+  {id:2,title:'1:1 with Alina (Sales Ops)',desc:'30-min sync on pipeline health, operational blockers, improvements.',freq:'weekly'},
+  {id:3,title:'Sales coordination standup',desc:'15-min standup — review active deals and coordination queue.',freq:'weekly'},
+  {id:4,title:'Review task completion',desc:'Check who is overloaded, who needs support.',freq:'weekly'},
+  {id:5,title:'Monthly individual performance notes',desc:'Brief private notes per team member — wins, areas to develop.',freq:'monthly'},
+  {id:6,title:'Friday lookback to team',desc:'Share wins, learnings, next-week priorities before weekend.',freq:'weekly'},
+  {id:7,title:'Check for burnout signals',desc:'Review: missed deadlines, tone changes, reduced output.',freq:'weekly'},
+];
+
+let taskStates=JSON.parse(localStorage.getItem('team-tasks')||'{}');
+let oneOnOne=JSON.parse(localStorage.getItem('onone-notes')||'{}');
+
+function renderMembers(){
+  const tbody=document.getElementById('memberBody');
+  const sel=document.getElementById('memberSel');
+  const nsel=document.getElementById('notesMember');
+  sel.innerHTML='<option value="">Select member...</option>';
+  nsel.innerHTML='<option value="">Select member...</option>';
+  tbody.innerHTML='';
+  let total=0,low=0,ci=0;
+  const today=new Date();
+  team.forEach(m=>{
+    total+=m.health;
+    if(m.health<6)low++;
+    const last=new Date(m.lastCheck);
+    const days=Math.floor((today-last)/86400000);
+    if(days<=7)ci++;
+    const hclass=m.health>=8?'ok':m.health>=6?'warn':'low';
+    const hcolor=m.health>=8?'#2a7a2a':m.health>=6?'#8a6a00':'#d63a2f';
+    const overdueClass=days>7?' overdue':'';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="m-name">${m.name}</div><div class="m-role">${m.role}</div></td>
+      <td><div class="health-wrap"><div class="health-bar-bg"><div class="health-fill" style="width:${m.health*10}%;background:${hcolor}"></div></div><span class="health-num ${hclass}">${m.health}/10</span></div></td>
+      <td><span class="last-check${overdueClass}">${days===0?'Today':days===1?'Yesterday':`${days}d ago`}</span></td>
+      <td><div class="m-note">${m.note||'—'}</div></td>
+      <td><button class="act-btn" onclick="quickCheckin('${m.id}')">Check in →</button></td>`;
+    tbody.appendChild(tr);
+    sel.appendChild(new Option(m.name,m.id));
+    nsel.appendChild(new Option(m.name,m.id));
+  });
+  document.getElementById('avgH').textContent=(total/team.length).toFixed(1);
+  document.getElementById('lowH').textContent=low;
+  document.getElementById('checkDone').textContent=`${ci}/6`;
+}
+
+function renderRecurring(){
+  const el=document.getElementById('recurringList');
+  el.innerHTML='';
+  recurring.forEach(t=>{
+    const done=taskStates[t.id]||false;
+    const div=document.createElement('div');
+    div.className='task-row'+(done?' done-row':'');
+    div.innerHTML=`<div class="task-cb ${done?'done':''}" onclick="toggleT(${t.id})">${done?'✓':''}</div><div class="freq-tag ${t.freq}">${t.freq}</div><div class="task-body"><div class="task-title">${t.title}</div><div class="task-desc">${t.desc}</div></div>`;
+    el.appendChild(div);
+  });
+}
+function toggleT(id){taskStates[id]=!taskStates[id];localStorage.setItem('team-tasks',JSON.stringify(taskStates));renderRecurring();}
+
+function quickCheckin(id){
+  document.getElementById('memberSel').value=id;
+  document.getElementById('checkinType').value='weekly';
+  genCheckin();
+  window.scrollTo({top:document.getElementById('memberSel').getBoundingClientRect().top+window.scrollY-100,behavior:'smooth'});
+}
+
+async function genCheckin(){
+  const mId=document.getElementById('memberSel').value;
+  const type=document.getElementById('checkinType').value;
+  const m=team.find(x=>x.id===mId);
+  const out=document.getElementById('checkinOut');
+  if(!m){out.textContent='Select a team member first.';return;}
+  const btn=document.getElementById('genBtn');
+  btn.disabled=true;btn.textContent='Generating...';
+  out.textContent='Generating...';
+  try{
+    const _teamPrompt = `You are a thoughtful team lead assistant. Generate a ${type} for:\nName: ${m.name}\nRole: ${m.role}\nHealth score: ${m.health}/10\nLast check-in: ${m.lastCheck}\n${m.note?'Recent note: '+m.note:''}\n\nGenerate 5 warm, genuine questions or talking points. Make them specific and human. Format as numbered list. Language: English.`;
+    out.textContent = await callAI(_teamPrompt, 800);
+  }catch(e){out.textContent='API error.';}
+  btn.disabled=false;btn.textContent='Generate';
+}
+
+function saveNotes(){
+  const mId=document.getElementById('notesMember').value;
+  const notes=document.getElementById('meetingNotes').value.trim();
+  if(!mId||!notes)return;
+  if(!oneOnOne[mId])oneOnOne[mId]=[];
+  oneOnOne[mId].unshift({date:new Date().toISOString().split('T')[0],notes});
+  localStorage.setItem('onone-notes',JSON.stringify(oneOnOne));
+  document.getElementById('meetingNotes').value='';
+  alert('Notes saved.');
+}
+
+function showHistory(){
+  const mId=document.getElementById('notesMember').value;
+  const area=document.getElementById('histArea');
+  if(!mId){area.innerHTML='';return;}
+  const hist=(oneOnOne[mId]||[]).slice(0,3);
+  area.innerHTML=hist.length?hist.map(h=>`<div style="margin-top:10px;padding:10px 12px;border:1px solid var(--border);font-size:11px;"><div style="font-family:var(--mono);font-size:9px;color:var(--ink-3);margin-bottom:4px;">${h.date}</div>${h.notes}</div>`).join(''):'<div style="font-size:11px;color:var(--ink-3);margin-top:10px;">No previous notes.</div>';
+}
+
+async function initData(){
+  try{
+    const r=await fetch('/data.json?t='+Date.now());
+    const d=await r.json();
+    team=(d.team||[]).map(m=>({
+      id:m.id, name:m.name, role:m.role,
+      health:m.health||8, lastCheck:m.lastCheck||'',
+      note:(m.notes&&m.notes.length)?m.notes[m.notes.length-1]:''
+    }));
+  }catch(e){console.warn('data.json unavailable',e);}
+  renderMembers();renderRecurring();
+}
+initData();
+setInterval(initData,60000);
+
+// ── Model switcher ────────────────────────────────────────────────────────────
+const MODEL_KEY = 'ls-model';
+const OLLAMA_BASE = 'http://localhost:11434';
+
+function getModel(){
+  return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';
+}
+
+function onModelChange(){
+  const val = document.getElementById('modelSel')?.value;
+  if(val){ localStorage.setItem(MODEL_KEY, val); updateModelUI(); }
+}
+
+function updateModelUI(){
+  const val = getModel();
+  const [type] = val.split('|');
+  const sel = document.getElementById('modelSel');
+  const dot = document.getElementById('modelDot');
+  if(sel) sel.value = val;
+  if(dot){ dot.className = 'model-indicator ' + (type==='local'?'local':'cloud'); }
+  if(sel){ sel.className = 'model-sel' + (type==='local'?' local':''); }
+}
+
+// Drop-in replacement for every API call in the dashboards.
+// Usage: const data = await callAI(systemOrUserPrompt, maxTokens)
+async function callAI(prompt, maxTokens=1000){
+  const val = getModel();
+  const [type, model] = val.split('|');
+
+  if(type === 'local'){
+    // Ollama OpenAI-compatible endpoint
+    const res = await fetch(`${OLLAMA_BASE}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if(!res.ok){
+      const err = await res.text();
+      throw new Error(`Ollama error ${res.status}: ${err.slice(0,200)}`);
+    }
+    const data = await res.json();
+    // OpenAI-compatible response shape
+    const text = data.choices?.[0]?.message?.content;
+    if(!text) throw new Error('Ollama returned no content. Is the model loaded? Run: ollama run ' + model);
+    return text;
+
+  } else {
+    // Anthropic cloud
+    const apiKey = localStorage.getItem('ls-api-key') || '';
+    if(!apiKey){ throw new Error('No Anthropic API key set. Click the key icon (🔑) in the toolbar to add it.'); }
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if(!res.ok || data.error){
+      throw new Error(data.error?.message || `HTTP ${res.status}`);
+    }
+    const block = Array.isArray(data.content) && data.content.find(c => c.type === 'text');
+    if(!block?.text) throw new Error('API returned no text content');
+    return block.text;
+  }
+}
+
+// Helper: parse JSON safely from model output (strips markdown fences)
+function safeJSON(raw){
+  if(!raw) return null;
+  const cleaned = raw.replace(/^```json\s*/i,'').replace(/^```/,'').replace(/```\s*$/,'').trim();
+  const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+  if(s===-1||e===-1) throw new Error('No JSON object found in response');
+  return JSON.parse(cleaned.slice(s, e+1));
+}
+
+// Init on page load
+document.addEventListener('DOMContentLoaded', updateModelUI);
+// Also init immediately in case DOMContentLoaded already fired
+updateModelUI();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Command Center — Livesystems AG</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f2f0eb; --surface:#ffffff; --ink:#0e0e0e; --ink-2:#3a3a3a;
+  --ink-3:#888; --ink-4:#bbb; --accent:#d63a2f; --accent-dim:rgba(214,58,47,.1);
+  --border:#d8d4cc; --border-dark:#0e0e0e;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif; --display:'Bebas Neue',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:14px;}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 40px;}
+
+/* topbar */
+.topbar{border-bottom:2px solid var(--border-dark);position:sticky;top:0;z-index:100;background:var(--bg);}
+.tb{max-width:1080px;margin:0 auto;padding:0 40px;display:flex;align-items:stretch;height:52px;}
+.tb-logo{font-family:var(--display);font-size:22px;letter-spacing:.04em;display:flex;align-items:center;padding-right:28px;border-right:1px solid var(--border);color:var(--ink);text-decoration:none;}
+.tb-logo span{color:var(--accent);}
+.tb-nav{display:flex;align-items:stretch;}
+.tb-nav a{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-decoration:none;display:flex;align-items:center;padding:0 18px;border-right:1px solid var(--border);transition:color .15s,background .15s;}
+.tb-nav a:hover{color:var(--ink);background:rgba(0,0,0,.03);}
+.tb-nav a.cur{color:var(--accent);}
+.tb-right{display:flex;align-items:center;gap:16px;margin-left:auto;}
+.tb-date{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.05em;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* hero */
+.hero{padding:52px 0 44px;border-bottom:1px solid var(--border);}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;}
+.hero-title{font-family:var(--display);font-size:76px;line-height:.9;letter-spacing:.02em;}
+.hero-title span{color:var(--accent);}
+.hero-stats{display:flex;margin-top:32px;border:1px solid var(--border-dark);}
+.hst{padding:16px 28px;border-right:1px solid var(--border-dark);}
+.hst:last-child{border-right:none;}
+.hst-v{font-family:var(--display);font-size:34px;line-height:1;}
+.hst-v.r{color:var(--accent);}
+.hst-l{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-top:4px;}
+
+/* sections */
+.sec{padding:44px 0;border-bottom:1px solid var(--border);}
+.sec:last-child{border-bottom:none;padding-bottom:80px;}
+.sec-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px;}
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
+.sec-title{font-family:var(--display);font-size:26px;letter-spacing:.04em;color:var(--ink);margin-top:4px;}
+
+/* space rows */
+.space-row{display:grid;grid-template-columns:220px 1fr 160px;align-items:center;gap:28px;padding:18px 0;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;transition:all .15s;cursor:pointer;}
+.space-row:last-child{border-bottom:none;}
+.space-row:hover{background:rgba(0,0,0,.025);margin:0 -40px;padding:18px 40px;}
+.space-row:hover .sp-arrow{opacity:1;transform:translateX(0);}
+.sp-name{font-family:var(--display);font-size:21px;letter-spacing:.04em;}
+.sp-sub{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-top:3px;}
+.sp-desc{font-size:12px;color:var(--ink-2);line-height:1.55;font-weight:300;}
+.sp-right{display:flex;align-items:center;justify-content:flex-end;gap:12px;}
+.badge{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border:1px solid var(--border);color:var(--ink-3);white-space:nowrap;}
+.badge.red{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.sp-arrow{font-family:var(--mono);font-size:16px;color:var(--accent);opacity:0;transform:translateX(-8px);transition:all .2s;}
+
+/* bottom 2-col */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:40px;}
+
+/* week */
+.week{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border-dark);}
+.wd{background:var(--bg);padding:14px 10px;text-align:center;}
+.wd.spec{background:var(--surface);}
+.wd.today{background:var(--ink);}
+.wd-n{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px;}
+.wd.today .wd-n{color:rgba(255,255,255,.45);}
+.wd-l{font-family:var(--display);font-size:13px;letter-spacing:.04em;color:var(--ink);}
+.wd.today .wd-l{color:#fff;}
+.wd.spec .wd-l{color:var(--accent);}
+
+/* tasks */
+.ti-row{display:flex;border:1px solid var(--border-dark);}
+.ti{flex:1;border:none;outline:none;background:transparent;font-family:var(--mono);font-size:11px;color:var(--ink);padding:11px 14px;}
+.ti::placeholder{color:var(--ink-4);}
+.ti-btn{background:var(--ink);color:#fff;border:none;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:0 18px;cursor:pointer;transition:background .15s;}
+.ti-btn:hover{background:var(--accent);}
+.t-list{border:1px solid var(--border);border-top:none;}
+.t-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;transition:background .15s;}
+.t-item:last-child{border-bottom:none;}
+.t-item:hover{background:rgba(0,0,0,.02);}
+.t-cb{width:13px;height:13px;border:1px solid var(--border-dark);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;transition:all .15s;}
+.t-item.done .t-cb{background:var(--ink);color:#fff;}
+.t-item.done .t-txt{text-decoration:line-through;color:var(--ink-4);}
+.t-txt{flex:1;color:var(--ink-2);}
+.t-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-4);padding:1px 5px;border:1px solid var(--border);}
+.t-tag.spoc{color:var(--accent);border-color:var(--accent);}
+.t-x{color:var(--ink-4);cursor:pointer;opacity:0;font-size:14px;line-height:1;}
+.t-item:hover .t-x{opacity:1;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.space-row{animation:fadeUp .3s ease both;}
+.space-row:nth-child(1){animation-delay:.05s}.space-row:nth-child(2){animation-delay:.10s}
+.space-row:nth-child(3){animation-delay:.15s}.space-row:nth-child(4){animation-delay:.20s}
+.space-row:nth-child(5){animation-delay:.25s}.space-row:nth-child(6){animation-delay:.30s}
+
+@media(max-width:700px){
+  .hero-title{font-size:48px}
+  .space-row,.space-row:hover{grid-template-columns:1fr;margin:0;padding:16px 0}
+  .two{grid-template-columns:1fr}
+  .tb-nav{display:none}
+}
+
+/* model selector */
+.model-sel-wrap{position:relative;display:flex;align-items:center;}
+.model-sel{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;background:transparent;border:1px solid var(--border);color:var(--ink-3);padding:5px 26px 5px 9px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;transition:all .15s;}
+.model-sel:hover,.model-sel:focus{border-color:var(--border-dark);color:var(--ink);}
+.model-sel.local{border-color:#2a7a2a;color:#2a7a2a;}
+.model-sel-arrow{position:absolute;right:7px;pointer-events:none;font-size:8px;color:var(--ink-3);}
+.model-indicator{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.model-indicator.cloud{background:var(--accent);}
+.model-indicator.local{background:#2a7a2a;}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="tb">
+    <a class="tb-logo" href="command-center.html">LS<span>.</span>AG</a>
+    <nav class="tb-nav">
+      <a href="spoc-hub.html">SPOC</a>
+      <a href="team-lead.html">Team</a>
+      <a href="project-hub.html">Projects</a>
+      <a href="email-analytics.html">Analytics</a>
+      <a href="weekly-rhythm.html">Rhythm</a>
+      <a href="crm-hubspot.html">CRM</a>
+    </nav>
+    <div class="tb-right">
+      <div class="model-sel-wrap">
+        <select class="model-sel" id="modelSel" onchange="onModelChange()">
+<optgroup label="Local (Ollama)">
+            <option value="local|glm-4.7-flash:latest">GLM-4.7 Flash ⚡</option>
+            <option value="local|qwen3.6:latest">Qwen3.6</option>
+            <option value="local|qwen3:14b">Qwen3 14b</option>
+          </optgroup>
+        </select>
+        <span class="model-sel-arrow">▾</span>
+      </div>
+      <div class="model-indicator cloud" id="modelDot" title="Model routing indicator"></div>
+      <div class="tb-date" id="topDate"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Livesystems AG — Personal OS</div>
+    <div class="hero-title" id="heroT">GOOD<br><span>MORNING</span></div>
+    <div class="hero-stats">
+      <div class="hst"><div class="hst-v" id="statMembers">—</div><div class="hst-l">Team members</div></div>
+      <div class="hst"><div class="hst-v r" id="statT">—</div><div class="hst-l">Open tasks</div></div>
+      <div class="hst"><div class="hst-v" id="statProjects">—</div><div class="hst-l">Active projects</div></div>
+      <div class="hst"><div class="hst-v r" id="statBlocked">—</div><div class="hst-l">Blocked</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd">
+      <div><div class="sec-label">Navigation</div><div class="sec-title">Your Spaces</div></div>
+    </div>
+    <a class="space-row" href="spoc-hub.html">
+      <div><div class="sp-name">SPOC Hub</div><div class="sp-sub">Post CH AG Interface</div></div>
+      <div class="sp-desc">Single point of contact between Livesystems AG and Post CH AG. AI keyword extraction from notes, communication log, critical item tracking.</div>
+      <div class="sp-right"><span class="badge" id="badgeSpoc">—</span><span class="sp-arrow">→</span></div>
+    </a>
+    <a class="space-row" href="team-lead.html">
+      <div><div class="sp-name">Team Lead</div><div class="sp-sub" id="teamSub">— Direct Reports</div></div>
+      <div class="sp-desc">Sales Operations (1) and Sales Coordination (5). Health scores, 1:1 notes, AI check-in generator, recurring task management.</div>
+      <div class="sp-right"><span class="badge" id="badgeTeam">—</span><span class="sp-arrow">→</span></div>
+    </a>
+    <a class="space-row" href="project-hub.html">
+      <div><div class="sp-name">Project Hub</div><div class="sp-sub">PM + Advisory</div></div>
+      <div class="sp-desc">HubSpot CRM, Order Management System, AI Planning Tool OOH. Status boards, milestones, blockers, AI project summaries.</div>
+      <div class="sp-right"><span class="badge" id="badgeProjects">—</span><span class="sp-arrow">→</span></div>
+    </a>
+    <a class="space-row" href="email-analytics.html">
+      <div><div class="sp-name">Email Analytics</div><div class="sp-sub">Front Reports</div></div>
+      <div class="sp-desc">Upload or paste Front email reports. AI extracts KPIs, key takeaways by category, and generates prioritised action items automatically.</div>
+      <div class="sp-right"><span class="badge">AI-powered</span><span class="sp-arrow">→</span></div>
+    </a>
+    <a class="space-row" href="weekly-rhythm.html">
+      <div><div class="sp-name">Weekly Rhythm</div><div class="sp-sub">Friday + Monday</div></div>
+      <div class="sp-desc">Friday lookback and Monday outlook. Structured input with AI-generated reflection and planning. Archived for pattern recognition.</div>
+      <div class="sp-right"><span class="badge" id="rhythmB">—</span><span class="sp-arrow">→</span></div>
+    </a>
+    <a class="space-row" href="crm-hubspot.html">
+      <div><div class="sp-name">CRM / HubSpot</div><div class="sp-sub">Implementation PM</div></div>
+      <div class="sp-desc">HubSpot CRM rollout dashboard. Timeline, decision log, AI-generated executive PM briefings.</div>
+      <div class="sp-right"><span class="badge" id="badgeCrm">—</span><span class="sp-arrow">→</span></div>
+    </a>
+  </div>
+
+  <div class="sec">
+    <div class="two">
+      <div>
+        <div class="sec-label" style="margin-bottom:14px;">Weekly Rhythm</div>
+        <div class="week" id="weekRow"></div>
+      </div>
+      <div>
+        <div class="sec-label" style="margin-bottom:0;">Quick Tasks</div>
+        <div class="ti-row" style="margin-top:14px;">
+          <input class="ti" id="taskIn" placeholder="Add task — press Enter" onkeydown="if(event.key==='Enter')addTask()">
+          <button class="ti-btn" onclick="addTask()">Add</button>
+        </div>
+        <div class="t-list" id="taskList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const now = new Date();
+const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('topDate').textContent=`${days[now.getDay()].slice(0,3).toUpperCase()} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+const h=now.getHours();
+document.getElementById('heroT').innerHTML=`GOOD<br><span>${h<12?'MORNING':h<17?'AFTERNOON':'EVENING'}</span>`;
+const rLabels=['—','Outlook','Focus','Midweek','Prep','Lookback','—'];
+document.getElementById('rhythmB').textContent=rLabels[now.getDay()];
+
+const wDays=[{n:'Mon',l:'Outlook',s:true},{n:'Tue',l:'—'},{n:'Wed',l:'—'},{n:'Thu',l:'—'},{n:'Fri',l:'Lookback',s:true}];
+const wr=document.getElementById('weekRow');
+wDays.forEach((d,i)=>{
+  const today=(i+1)===now.getDay();
+  const div=document.createElement('div');
+  div.className='wd'+(today?' today':d.s?' spec':'');
+  div.innerHTML=`<div class="wd-n">${d.n}</div><div class="wd-l">${d.l}</div>`;
+  wr.appendChild(div);
+});
+
+let tasks=[];
+const save=()=>{document.getElementById('statT').textContent=tasks.filter(t=>!t.done).length;};
+function render(){
+  const list=document.getElementById('taskList');list.innerHTML='';
+  tasks.slice(0,6).forEach((t,i)=>{
+    const el=document.createElement('div');el.className='t-item'+(t.done?' done':'');
+    el.innerHTML=`<div class="t-cb" onclick="tog(${i})">${t.done?'✓':''}</div><div class="t-txt">${t.text}</div><div class="t-tag${t.tag==='SPOC'?' spoc':''}">${t.tag}</div><div class="t-x" onclick="del(${i})">×</div>`;
+    list.appendChild(el);
+  });
+  save();
+}
+function addTask(){const v=document.getElementById('taskIn').value.trim();if(!v)return;tasks.unshift({id:Date.now(),text:v,tag:'General',done:false});document.getElementById('taskIn').value='';render();}
+function tog(i){tasks[i].done=!tasks[i].done;render();}
+function del(i){tasks.splice(i,1);render();}
+function setBadge(id,text,red){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=text;
+  el.className=red?'badge red':'badge';
+}
+
+async function initData(){
+  try{
+    const r=await fetch('/data.json?t='+Date.now());
+    const d=await r.json();
+    tasks=d.tasks||[];
+    const team=d.team||[];
+    const projects=d.projects||[];
+    const spoc=d.spoc_log||[];
+    const today=new Date();
+
+    // Hero stats
+    document.getElementById('statMembers').textContent=team.length||'—';
+    const active=projects.filter(p=>p.status!=='done');
+    const blocked=projects.filter(p=>p.status==='blocked');
+    document.getElementById('statProjects').textContent=active.length;
+    document.getElementById('statBlocked').textContent=blocked.length;
+    document.getElementById('statBlocked').className=blocked.length?'hst-v r':'hst-v';
+
+    // SPOC badge
+    const urgent=spoc.filter(e=>e.status==='urgent').length;
+    const open=spoc.filter(e=>e.status==='open').length;
+    if(urgent>0) setBadge('badgeSpoc',urgent+' Urgent',true);
+    else if(open>0) setBadge('badgeSpoc',open+' Open',false);
+    else setBadge('badgeSpoc','All clear',false);
+
+    // Team badge — low health or stale check-in (>7 days)
+    document.getElementById('teamSub').textContent=team.length+' Direct Reports';
+    const needAttention=team.filter(m=>{
+      if(m.health<=6)return true;
+      if(m.lastCheck){
+        const days=(today-new Date(m.lastCheck))/(1000*60*60*24);
+        if(days>7)return true;
+      }
+      return false;
+    });
+    if(needAttention.length>0) setBadge('badgeTeam',needAttention.length+' Need attention',true);
+    else setBadge('badgeTeam','All good',false);
+
+    // Projects badge
+    if(blocked.length>0) setBadge('badgeProjects',blocked.length+' Blocked',true);
+    else if(active.length>0) setBadge('badgeProjects',active.length+' Active',false);
+    else setBadge('badgeProjects','All done',false);
+
+    // CRM badge — HubSpot project status
+    const hs=projects.find(p=>p.id==='hubspot');
+    if(hs){
+      const statusMap={ontrack:'On track',atrisk:'At risk',blocked:'Blocked',done:'Done'};
+      setBadge('badgeCrm',statusMap[hs.status]||hs.status,hs.status==='atrisk'||hs.status==='blocked');
+    }
+  }catch(e){console.warn('data.json unavailable',e);}
+
+  // Weekly rhythm badge (day-based, no data.json needed)
+  const day=new Date().getDay();
+  const rhythmEl=document.getElementById('rhythmB');
+  if(rhythmEl){
+    if(day===5){rhythmEl.textContent='Friday lookback';rhythmEl.className='badge red';}
+    else if(day===1){rhythmEl.textContent='Monday outlook';rhythmEl.className='badge red';}
+    else{rhythmEl.textContent='Weekly';rhythmEl.className='badge';}
+  }
+
+  render();
+}
+initData();
+setInterval(initData,60000);
+
+// ── Model switcher ────────────────────────────────────────────────────────────
+const MODEL_KEY = 'ls-model';
+const OLLAMA_BASE = 'http://localhost:11434';
+
+function getModel(){
+  return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';
+}
+
+function onModelChange(){
+  const val = document.getElementById('modelSel')?.value;
+  if(val){ localStorage.setItem(MODEL_KEY, val); updateModelUI(); }
+}
+
+function updateModelUI(){
+  const val = getModel();
+  const [type] = val.split('|');
+  const sel = document.getElementById('modelSel');
+  const dot = document.getElementById('modelDot');
+  if(sel) sel.value = val;
+  if(dot){ dot.className = 'model-indicator ' + (type==='local'?'local':'cloud'); }
+  if(sel){ sel.className = 'model-sel' + (type==='local'?' local':''); }
+}
+
+// Drop-in replacement for every API call in the dashboards.
+// Usage: const data = await callAI(systemOrUserPrompt, maxTokens)
+async function callAI(prompt, maxTokens=1000){
+  const val = getModel();
+  const [type, model] = val.split('|');
+
+  if(type === 'local'){
+    // Ollama OpenAI-compatible endpoint
+    const res = await fetch(`${OLLAMA_BASE}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if(!res.ok){
+      const err = await res.text();
+      throw new Error(`Ollama error ${res.status}: ${err.slice(0,200)}`);
+    }
+    const data = await res.json();
+    // OpenAI-compatible response shape
+    const text = data.choices?.[0]?.message?.content;
+    if(!text) throw new Error('Ollama returned no content. Is the model loaded? Run: ollama run ' + model);
+    return text;
+
+  } else {
+    // Anthropic cloud
+    const apiKey = localStorage.getItem('ls-api-key') || '';
+    if(!apiKey){ throw new Error('No Anthropic API key set. Click the key icon (🔑) in the toolbar to add it.'); }
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if(!res.ok || data.error){
+      throw new Error(data.error?.message || `HTTP ${res.status}`);
+    }
+    const block = Array.isArray(data.content) && data.content.find(c => c.type === 'text');
+    if(!block?.text) throw new Error('API returned no text content');
+    return block.text;
+  }
+}
+
+// Helper: parse JSON safely from model output (strips markdown fences)
+function safeJSON(raw){
+  if(!raw) return null;
+  const cleaned = raw.replace(/^```json\s*/i,'').replace(/^```/,'').replace(/```\s*$/,'').trim();
+  const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+  if(s===-1||e===-1) throw new Error('No JSON object found in response');
+  return JSON.parse(cleaned.slice(s, e+1));
+}
+
+// Init on page load
+document.addEventListener('DOMContentLoaded', updateModelUI);
+// Also init immediately in case DOMContentLoaded already fired
+updateModelUI();
+
+</script>
+</body>
+</html>

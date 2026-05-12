@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPOC Hub — Post CH AG Interface</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f0eb;--surface:#fff;--ink:#0e0e0e;--ink-2:#3a3a3a;--ink-3:#888;--ink-4:#bbb;--accent:#d63a2f;--accent-dim:rgba(214,58,47,.1);--border:#d8d4cc;--border-dark:#0e0e0e;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 40px;}
+.topbar{border-bottom:2px solid var(--border-dark);position:sticky;top:0;z-index:100;background:var(--bg);}
+.tb{max-width:1080px;margin:0 auto;padding:0 40px;display:flex;align-items:stretch;height:52px;}
+.tb-logo{font-family:var(--display);font-size:22px;letter-spacing:.04em;display:flex;align-items:center;padding-right:28px;border-right:1px solid var(--border);color:var(--ink);text-decoration:none;}
+.tb-logo span{color:var(--accent);}
+.tb-nav{display:flex;align-items:stretch;}
+.tb-nav a{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-decoration:none;display:flex;align-items:center;padding:0 18px;border-right:1px solid var(--border);transition:color .15s,background .15s;}
+.tb-nav a:hover{color:var(--ink);background:rgba(0,0,0,.03);}
+.tb-nav a.cur{color:var(--accent);}
+.tb-right{display:flex;align-items:center;gap:16px;margin-left:auto;}
+.tb-date{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.05em;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.page-hero{padding:52px 0 40px;border-bottom:1px solid var(--border);}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;}
+.page-title{font-family:var(--display);font-size:72px;line-height:.9;letter-spacing:.02em;}
+.page-title span{color:var(--accent);}
+.page-sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:14px;letter-spacing:.03em;}
+
+.sec{padding:40px 0;border-bottom:1px solid var(--border);}
+.sec:last-child{border-bottom:none;padding-bottom:80px;}
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:20px;}
+
+/* stats row */
+.stats-row{display:flex;border:1px solid var(--border-dark);}
+.stat{padding:16px 28px;border-right:1px solid var(--border-dark);}
+.stat:last-child{border-right:none;}
+.stat-v{font-family:var(--display);font-size:34px;line-height:1;}
+.stat-v.r{color:var(--accent);}
+.stat-l{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-top:4px;}
+
+/* extractor */
+.extractor{border:1px solid var(--border-dark);}
+.ex-head{padding:14px 16px;border-bottom:1px solid var(--border);background:var(--ink);}
+.ex-head-txt{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#fff;}
+.ex-body{padding:16px;}
+textarea.field{width:100%;background:var(--surface);border:1px solid var(--border);padding:14px 16px;font-family:var(--mono);font-size:11px;color:var(--ink);line-height:1.7;outline:none;resize:vertical;transition:border-color .15s;}
+textarea.field:focus{border-color:var(--border-dark);}
+textarea.field::placeholder{color:var(--ink-4);}
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+.btn{padding:10px 20px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover{background:var(--accent);}
+.btn-primary:disabled{opacity:.4;cursor:default;}
+.btn-ghost{background:transparent;border:1px solid var(--border-dark);color:var(--ink);}
+.btn-ghost:hover{background:rgba(0,0,0,.04);}
+
+/* keyword results */
+.kw-section{margin-top:20px;padding-top:20px;border-top:1px solid var(--border);display:none;}
+.kw-section.show{display:block;}
+.kw-group{margin-bottom:16px;}
+.kw-label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.kw-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.kw-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.kw-tag{font-family:var(--mono);font-size:10px;padding:4px 10px;border:1px solid var(--border);color:var(--ink-2);cursor:pointer;transition:all .15s;}
+.kw-tag:hover{border-color:var(--border-dark);}
+.kw-tag.critical{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.kw-tag.important{border-color:#b8860b;color:#7a5a00;background:rgba(184,134,11,.08);}
+.ai-summary{background:var(--surface);border:1px solid var(--border);padding:16px;font-size:12px;line-height:1.7;color:var(--ink-2);font-style:italic;margin-top:16px;}
+
+/* two col */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:32px;}
+
+/* log */
+.log-item{padding:16px 0;border-bottom:1px solid var(--border);}
+.log-item:last-child{border-bottom:none;}
+.log-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;}
+.log-title{font-family:var(--display);font-size:17px;letter-spacing:.03em;color:var(--ink);}
+.log-date{font-family:var(--mono);font-size:9px;color:var(--ink-3);}
+.log-body{font-size:12px;color:var(--ink-2);line-height:1.6;margin-bottom:8px;font-weight:300;}
+.log-footer{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.log-status{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border:1px solid;}
+.s-open{border-color:var(--border-dark);color:var(--ink);}
+.s-urgent{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.s-done{border-color:var(--ink-4);color:var(--ink-4);}
+.log-kw{font-family:var(--mono);font-size:9px;color:var(--ink-4);padding:2px 6px;border:1px solid var(--border);}
+
+/* form */
+.form-stack{display:flex;flex-direction:column;gap:10px;}
+input.field,select.field{width:100%;background:var(--surface);border:1px solid var(--border);padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--ink);outline:none;transition:border-color .15s;-webkit-appearance:none;}
+input.field:focus,select.field:focus,textarea.field:focus{border-color:var(--border-dark);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field-label{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px;}
+
+.log-scroll{max-height:480px;overflow-y:auto;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sec{animation:fadeUp .3s ease both;}
+
+/* model selector */
+.model-sel-wrap{position:relative;display:flex;align-items:center;}
+.model-sel{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;background:transparent;border:1px solid var(--border);color:var(--ink-3);padding:5px 26px 5px 9px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;transition:all .15s;}
+.model-sel:hover,.model-sel:focus{border-color:var(--border-dark);color:var(--ink);}
+.model-sel.local{border-color:#2a7a2a;color:#2a7a2a;}
+.model-sel-arrow{position:absolute;right:7px;pointer-events:none;font-size:8px;color:var(--ink-3);}
+.model-indicator{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.model-indicator.cloud{background:var(--accent);}
+.model-indicator.local{background:#2a7a2a;}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="tb">
+    <a class="tb-logo" href="command-center.html">LS<span>.</span>AG</a>
+    <nav class="tb-nav">
+      <a href="spoc-hub.html" class="cur">SPOC</a>
+      <a href="team-lead.html">Team</a>
+      <a href="project-hub.html">Projects</a>
+      <a href="email-analytics.html">Analytics</a>
+      <a href="weekly-rhythm.html">Rhythm</a>
+      <a href="crm-hubspot.html">CRM</a>
+    </nav>
+    <div class="tb-right">
+      <div class="model-sel-wrap">
+        <select class="model-sel" id="modelSel" onchange="onModelChange()">
+<optgroup label="Local (Ollama)">
+            <option value="local|glm-4.7-flash:latest">GLM-4.7 Flash ⚡</option>
+            <option value="local|qwen3.6:latest">Qwen3.6</option>
+            <option value="local|qwen3:14b">Qwen3 14b</option>
+          </optgroup>
+        </select>
+        <span class="model-sel-arrow">▾</span>
+      </div>
+      <div class="model-indicator cloud" id="modelDot" title="Model routing indicator"></div>
+      <div class="tb-date" id="topDate"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="page-hero">
+    <div class="eyebrow">Post CH AG Interface</div>
+    <div class="page-title">SPOC<br><span>Hub</span></div>
+    <div class="page-sub">Single point of contact — Livesystems AG ↔ Post CH AG · Keyword intelligence · Communication log</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">Overview</div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-v r" id="openC">—</div><div class="stat-l">Open items</div></div>
+      <div class="stat"><div class="stat-v r" id="urgentC">—</div><div class="stat-l">Urgent</div></div>
+      <div class="stat"><div class="stat-v" id="lastD">—</div><div class="stat-l">Last interaction</div></div>
+      <div class="stat"><div class="stat-v">Post CH AG</div><div class="stat-l">Counterpart</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">AI Keyword Extractor — paste Standard Notes content</div>
+    <div class="extractor">
+      <div class="ex-head"><div class="ex-head-txt">Note → SPOC keyword extraction</div></div>
+      <div class="ex-body">
+        <textarea class="field" id="noteInput" rows="6" placeholder="Paste your Standard Notes content here — meeting notes, call notes, email summaries from Post CH AG interactions. AI extracts SPOC-relevant keywords and flags critical topics..."></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="extractBtn" onclick="extractKeywords()">Extract keywords</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('noteInput').value='';document.getElementById('kwSection').classList.remove('show')">Clear</button>
+        </div>
+        <div class="kw-section" id="kwSection">
+          <div class="kw-group">
+            <div class="kw-label">Critical — immediate action required</div>
+            <div class="kw-tags" id="kwCritical"></div>
+          </div>
+          <div class="kw-group">
+            <div class="kw-label">Important — track closely</div>
+            <div class="kw-tags" id="kwImportant"></div>
+          </div>
+          <div class="kw-group">
+            <div class="kw-label">General reference</div>
+            <div class="kw-tags" id="kwNormal"></div>
+          </div>
+          <div class="ai-summary" id="aiSummary"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="two">
+      <div>
+        <div class="sec-label">Communication log</div>
+        <div class="log-scroll" id="logList"></div>
+      </div>
+      <div>
+        <div class="sec-label">Add entry</div>
+        <div class="form-stack">
+          <div>
+            <div class="field-label">Topic / subject</div>
+            <input class="field" id="logTitle" placeholder="e.g. Q2 campaign alignment call">
+          </div>
+          <div>
+            <div class="field-label">Notes</div>
+            <textarea class="field" id="logBody" rows="4" placeholder="Context, decisions, follow-ups..."></textarea>
+          </div>
+          <div class="form-row">
+            <div>
+              <div class="field-label">Status</div>
+              <select class="field" id="logStatus">
+                <option value="open">Open</option>
+                <option value="urgent">Urgent</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+            <div>
+              <div class="field-label">Date</div>
+              <input class="field" id="logDate" type="date">
+            </div>
+          </div>
+          <div>
+            <div class="field-label">Keywords (comma-separated)</div>
+            <input class="field" id="logKws" placeholder="budget, Q2, deadline...">
+          </div>
+          <button class="btn btn-primary" onclick="addLog()">Save entry</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const now=new Date();
+const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('topDate').textContent=`${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+document.getElementById('logDate').valueAsDate=new Date();
+
+let logs=[];
+
+function renderLogs(){
+  const el=document.getElementById('logList');
+  el.innerHTML='';
+  const sorted=[...logs].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  sorted.forEach(l=>{
+    const div=document.createElement('div');div.className='log-item';
+    const kws=(l.kws||[]).map(k=>`<span class="log-kw">${k}</span>`).join('');
+    div.innerHTML=`<div class="log-hd"><div class="log-title">${l.title}</div><div class="log-date">${l.date}</div></div><div class="log-body">${l.body}</div><div class="log-footer"><span class="log-status s-${l.status}">${l.status}</span>${kws}</div>`;
+    el.appendChild(div);
+  });
+  document.getElementById('openC').textContent=logs.filter(x=>x.status==='open').length;
+  document.getElementById('urgentC').textContent=logs.filter(x=>x.status==='urgent').length;
+  const dates=logs.map(x=>new Date(x.date)).sort((a,b)=>b-a);
+  if(dates.length) document.getElementById('lastD').textContent=dates[0].toLocaleDateString('de-CH',{day:'2-digit',month:'short'});
+}
+
+function addLog(){
+  const title=document.getElementById('logTitle').value.trim();
+  if(!title)return;
+  logs.unshift({id:Date.now(),title,body:document.getElementById('logBody').value.trim(),status:document.getElementById('logStatus').value,date:document.getElementById('logDate').value,kws:document.getElementById('logKws').value.split(',').map(k=>k.trim()).filter(Boolean)});
+  localStorage.setItem('spoc-logs',JSON.stringify(logs));
+  ['logTitle','logBody','logKws'].forEach(id=>document.getElementById(id).value='');
+  renderLogs();
+}
+
+async function extractKeywords(){
+  const text=document.getElementById('noteInput').value.trim();
+  if(!text){alert('Paste some notes first.');return;}
+  const btn=document.getElementById('extractBtn');
+  btn.disabled=true;btn.textContent='Analysing...';
+  document.getElementById('kwSection').classList.add('show');
+  document.getElementById('kwCritical').innerHTML='<span class="kw-tag" style="opacity:.4">Processing...</span>';
+  document.getElementById('kwImportant').innerHTML='';
+  document.getElementById('kwNormal').innerHTML='';
+  document.getElementById('aiSummary').textContent='';
+  try{
+    const _raw=await callAI(`You are a SPOC intelligence assistant for Livesystems AG ↔ Post CH AG. Analyse these notes and return ONLY valid JSON, no markdown fences:\n{"critical":["kw1"],"important":["kw2"],"normal":["kw3"],"summary":"2-3 sentence SPOC-relevant summary with required actions."}\nCritical=deadlines/blockers/commitments. Important=decisions/changes. Normal=context/names.\nNotes:\n${text}`,1000);
+    const result=safeJSON(_raw);
+    ['critical','important','normal'].forEach(type=>{
+      document.getElementById('kw'+type.charAt(0).toUpperCase()+type.slice(1)).innerHTML=(result[type]||[]).map(k=>`<span class="kw-tag ${type==='normal'?'':type}">${k}</span>`).join('');
+    });
+    document.getElementById('aiSummary').textContent=result.summary||'';
+  }catch(e){document.getElementById('kwCritical').innerHTML='<span style="font-size:11px;color:#888">Analysis failed — check API connection.</span>';}
+  btn.disabled=false;btn.textContent='Extract keywords';
+}
+async function initData(){
+  try{
+    const r=await fetch('/data.json?t='+Date.now());
+    const d=await r.json();
+    logs=d.spoc_log||[];
+  }catch(e){console.warn('data.json unavailable',e);}
+  renderLogs();
+}
+initData();
+setInterval(initData,60000);
+
+// ── Model switcher ────────────────────────────────────────────────────────────
+const MODEL_KEY = 'ls-model';
+const OLLAMA_BASE = 'http://localhost:11434';
+
+function getModel(){
+  return localStorage.getItem(MODEL_KEY) || 'local|qwen3:14b';
+}
+
+function onModelChange(){
+  const val = document.getElementById('modelSel')?.value;
+  if(val){ localStorage.setItem(MODEL_KEY, val); updateModelUI(); }
+}
+
+function updateModelUI(){
+  const val = getModel();
+  const [type] = val.split('|');
+  const sel = document.getElementById('modelSel');
+  const dot = document.getElementById('modelDot');
+  if(sel) sel.value = val;
+  if(dot){ dot.className = 'model-indicator ' + (type==='local'?'local':'cloud'); }
+  if(sel){ sel.className = 'model-sel' + (type==='local'?' local':''); }
+}
+
+// Drop-in replacement for every API call in the dashboards.
+// Usage: const data = await callAI(systemOrUserPrompt, maxTokens)
+async function callAI(prompt, maxTokens=1000){
+  const val = getModel();
+  const [type, model] = val.split('|');
+
+  if(type === 'local'){
+    // Ollama OpenAI-compatible endpoint
+    const res = await fetch(`${OLLAMA_BASE}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if(!res.ok){
+      const err = await res.text();
+      throw new Error(`Ollama error ${res.status}: ${err.slice(0,200)}`);
+    }
+    const data = await res.json();
+    // OpenAI-compatible response shape
+    const text = data.choices?.[0]?.message?.content;
+    if(!text) throw new Error('Ollama returned no content. Is the model loaded? Run: ollama run ' + model);
+    return text;
+
+  } else {
+    // Anthropic cloud
+    const apiKey = localStorage.getItem('ls-api-key') || '';
+    if(!apiKey){ throw new Error('No Anthropic API key set. Click the key icon (🔑) in the toolbar to add it.'); }
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if(!res.ok || data.error){
+      throw new Error(data.error?.message || `HTTP ${res.status}`);
+    }
+    const block = Array.isArray(data.content) && data.content.find(c => c.type === 'text');
+    if(!block?.text) throw new Error('API returned no text content');
+    return block.text;
+  }
+}
+
+// Helper: parse JSON safely from model output (strips markdown fences)
+function safeJSON(raw){
+  if(!raw) return null;
+  const cleaned = raw.replace(/^```json\s*/i,'').replace(/^```/,'').replace(/```\s*$/,'').trim();
+  const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+  if(s===-1||e===-1) throw new Error('No JSON object found in response');
+  return JSON.parse(cleaned.slice(s, e+1));
+}
+
+// Init on page load
+document.addEventListener('DOMContentLoaded', updateModelUI);
+// Also init immediately in case DOMContentLoaded already fired
+updateModelUI();
+
+</script>
+</body>
+</html>

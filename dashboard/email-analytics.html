@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Analytics — Front Reports</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f0eb;--surface:#fff;--ink:#0e0e0e;--ink-2:#3a3a3a;--ink-3:#888;--ink-4:#bbb;--accent:#d63a2f;--accent-dim:rgba(214,58,47,.1);--border:#d8d4cc;--border-dark:#0e0e0e;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 40px;}
+.topbar{border-bottom:2px solid var(--border-dark);position:sticky;top:0;z-index:100;background:var(--bg);}
+.tb{max-width:1080px;margin:0 auto;padding:0 40px;display:flex;align-items:stretch;height:52px;}
+.tb-logo{font-family:var(--display);font-size:22px;letter-spacing:.04em;display:flex;align-items:center;padding-right:28px;border-right:1px solid var(--border);color:var(--ink);text-decoration:none;}
+.tb-logo span{color:var(--accent);}
+.tb-nav{display:flex;align-items:stretch;}
+.tb-nav a{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-decoration:none;display:flex;align-items:center;padding:0 18px;border-right:1px solid var(--border);transition:color .15s,background .15s;}
+.tb-nav a:hover{color:var(--ink);background:rgba(0,0,0,.03);}
+.tb-nav a.cur{color:var(--accent);}
+.tb-right{display:flex;align-items:center;gap:16px;margin-left:auto;}
+.tb-date{font-family:var(--mono);font-size:10px;color:var(--ink-3);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.page-hero{padding:52px 0 40px;border-bottom:1px solid var(--border);}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;}
+.page-title{font-family:var(--display);font-size:72px;line-height:.9;letter-spacing:.02em;}
+.page-title span{color:var(--accent);}
+.page-sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:14px;}
+
+.sec{padding:40px 0;border-bottom:1px solid var(--border);}
+.sec:last-child{border-bottom:none;padding-bottom:80px;}
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:20px;}
+
+.how-to{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border-dark);}
+.step{background:var(--bg);padding:16px;}
+.step-n{font-family:var(--display);font-size:32px;color:var(--accent);line-height:1;margin-bottom:6px;}
+.step-txt{font-size:11px;color:var(--ink-2);line-height:1.5;font-weight:300;}
+
+.drop-zone{border:1px dashed var(--border-dark);padding:40px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);}
+.drop-zone:hover,.drop-zone.over{border-style:solid;background:rgba(0,0,0,.02);}
+.drop-icon{font-size:28px;margin-bottom:10px;}
+.drop-title{font-family:var(--display);font-size:18px;letter-spacing:.04em;margin-bottom:4px;}
+.drop-sub{font-family:var(--mono);font-size:10px;color:var(--ink-3);}
+
+.divider{display:flex;align-items:center;gap:16px;margin:16px 0;font-family:var(--mono);font-size:10px;color:var(--ink-4);letter-spacing:.08em;text-transform:uppercase;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+textarea.field{width:100%;background:var(--surface);border:1px solid var(--border);padding:14px 16px;font-family:var(--mono);font-size:11px;color:var(--ink);line-height:1.7;outline:none;resize:vertical;transition:border-color .15s;}
+textarea.field:focus{border-color:var(--border-dark);}
+textarea.field::placeholder{color:var(--ink-4);}
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+.btn{padding:10px 20px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover{background:var(--accent);}
+.btn-primary:disabled{opacity:.4;cursor:default;}
+.btn-ghost{background:transparent;border:1px solid var(--border-dark);color:var(--ink);}
+.btn-ghost:hover{background:rgba(0,0,0,.04);}
+
+/* KPI row */
+.kpi-row{display:flex;border:1px solid var(--border-dark);margin-bottom:28px;}
+.kpi{flex:1;padding:14px 20px;border-right:1px solid var(--border-dark);}
+.kpi:last-child{border-right:none;}
+.kpi-v{font-family:var(--display);font-size:26px;line-height:1;}
+.kpi-l{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-top:3px;}
+.kpi-d{font-family:var(--mono);font-size:9px;margin-top:4px;}
+.kpi-d.up{color:#2a7a2a;}
+.kpi-d.dn{color:var(--accent);}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:32px;}
+
+/* takeaways */
+.takeaway{padding:14px 0;border-bottom:1px solid var(--border);display:flex;gap:14px;align-items:flex-start;}
+.takeaway:last-child{border-bottom:none;}
+.t-type{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border:1px solid;flex-shrink:0;margin-top:2px;}
+.t-type.insight{border-color:var(--border-dark);color:var(--ink);}
+.t-type.action{border-color:#2a7a2a;color:#2a7a2a;background:rgba(42,122,42,.06);}
+.t-type.risk{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.t-type.trend{border-color:#1a5a8a;color:#1a5a8a;background:rgba(26,90,138,.06);}
+.t-text{font-size:12px;color:var(--ink-2);line-height:1.6;font-weight:300;}
+
+/* actions */
+.action-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.action-item:last-child{border-bottom:none;}
+.a-num{font-family:var(--display);font-size:22px;color:var(--ink-4);flex-shrink:0;line-height:1;margin-top:2px;}
+.a-text{flex:1;font-size:12px;color:var(--ink-2);line-height:1.6;font-weight:300;}
+.a-pri{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:3px 7px;border:1px solid;flex-shrink:0;margin-top:2px;}
+.p-high{border-color:var(--accent);color:var(--accent);}
+.p-medium{border-color:var(--border-dark);color:var(--ink-3);}
+.p-low{border-color:var(--border);color:var(--ink-4);}
+
+.ai-full{background:var(--surface);border:1px solid var(--border);padding:16px;font-size:12px;line-height:1.8;color:var(--ink-2);white-space:pre-wrap;font-weight:300;}
+
+/* history */
+.hist-item{padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.hist-item:last-child{border-bottom:none;}
+.hist-item:hover .hist-date{color:var(--accent);}
+.hist-date{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-bottom:4px;transition:color .15s;}
+.hist-preview{font-size:12px;color:var(--ink-2);font-weight:300;}
+
+.results{display:none;}
+.results.show{display:block;}
+
+/* model selector */
+.model-sel-wrap{position:relative;display:flex;align-items:center;}
+.model-sel{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;background:transparent;border:1px solid var(--border);color:var(--ink-3);padding:5px 26px 5px 9px;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;transition:all .15s;}
+.model-sel:hover,.model-sel:focus{border-color:var(--border-dark);color:var(--ink);}
+.model-sel.local{border-color:#2a7a2a;color:#2a7a2a;}
+.model-sel-arrow{position:absolute;right:7px;pointer-events:none;font-size:8px;color:var(--ink-3);}
+.model-indicator{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.model-indicator.cloud{background:var(--accent);}
+.model-indicator.local{background:#2a7a2a;}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="tb">
+    <a class="tb-logo" href="command-center.html">LS<span>.</span>AG</a>
+    <nav class="tb-nav">
+      <a href="spoc-hub.html">SPOC</a>
+      <a href="team-lead.html">Team</a>
+      <a href="project-hub.html">Projects</a>
+      <a href="email-analytics.html" class="cur">Analytics</a>
+      <a href="weekly-rhythm.html">Rhythm</a>
+      <a href="crm-hubspot.html">CRM</a>
+    </nav>
+    <div class="tb-right">
+      <div class="model-sel-wrap">
+        <select class="model-sel" id="modelSel" onchange="onModelChange()">
+          <optgroup label="Cloud (Anthropic)">
+            <option value="cloud|claude-sonnet-4-20250514">Sonnet 4.6</option>
+            <option value="cloud|claude-haiku-4-5-20251001">Haiku 4.5</option>
+          </optgroup>
+          <optgroup label="Local (Ollama)">
+            <option value="local|qwen3:14b">Qwen3 14b ⚡</option>
+            <option value="local|qwen3:8b">Qwen3 8b</option>
+            <option value="local|llama3.1:8b">Llama 3.1 8b</option>
+            <option value="local|mistral">Mistral 7b</option>
+          </optgroup>
+        </select>
+        <span class="model-sel-arrow">▾</span>
+      </div>
+      <div class="model-indicator cloud" id="modelDot" title="Model routing indicator"></div>
+      <div class="tb-date" id="topDate"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="page-hero">
+    <div class="eyebrow">Front Reports · AI-powered</div>
+    <div class="page-title">EMAIL<br><span>Analytics</span></div>
+    <div class="page-sub">Upload or paste Front reports · AI extracts KPIs, takeaways, and prioritised action items</div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">How to use</div>
+    <div class="how-to">
+      <div class="step"><div class="step-n">01</div><div class="step-txt">In Front go to Reports → export as PDF → forward to email</div></div>
+      <div class="step"><div class="step-n">02</div><div class="step-txt">Open PDF, select all (Ctrl+A), copy (Ctrl+C) or drag & drop here</div></div>
+      <div class="step"><div class="step-n">03</div><div class="step-txt">Click Analyse — AI extracts KPIs, takeaways and actions</div></div>
+      <div class="step"><div class="step-n">04</div><div class="step-txt">Copy action items to Super Productivity or your calendar</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">Upload or paste report</div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileIn').click()"
+      ondragover="event.preventDefault();this.classList.add('over')"
+      ondragleave="this.classList.remove('over')"
+      ondrop="handleDrop(event)">
+      <div class="drop-icon">📄</div>
+      <div class="drop-title">Drop Front PDF here</div>
+      <div class="drop-sub">or click to browse · .pdf .txt .csv accepted</div>
+      <input type="file" id="fileIn" accept=".pdf,.txt,.csv" style="display:none" onchange="handleFile(event)">
+    </div>
+    <div class="divider">or paste text</div>
+    <textarea class="field" id="reportText" rows="8" placeholder="Paste your Front report data here — metrics, agent performance, response times, CSAT scores, volume data..."></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="analyseBtn" onclick="analyse()">Analyse report</button>
+      <button class="btn btn-ghost" onclick="loadDemo()">Load demo data</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('reportText').value='';document.getElementById('results').classList.remove('show')">Clear</button>
+    </div>
+  </div>
+
+  <div class="results sec" id="results">
+    <div class="sec-label">Extracted KPIs</div>
+    <div class="kpi-row" id="kpiRow"></div>
+
+    <div class="two">
+      <div>
+        <div class="sec-label">Key takeaways</div>
+        <div id="takeawayList"></div>
+      </div>
+      <div>
+        <div class="sec-label">Action items</div>
+        <div id="actionList"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:32px;">
+      <div class="sec-label">Full AI analysis</div>
+      <div class="ai-full" id="aiFull"></div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-ghost" onclick="navigator.clipboard.writeText(document.getElementById('aiFull').textContent).then(()=>alert('Copied!'))">Copy analysis</button>
+        <button class="btn btn-ghost" onclick="saveHistory()">Save to history</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">Analysis history</div>
+    <div id="histList"><div style="font-family:var(--mono);font-size:11px;color:var(--ink-4);">No saved analyses yet.</div></div>
+  </div>
+</div>
+
+<script>
+const now=new Date();
+const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('topDate').textContent=`${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+let lastResult=null;
+let history=JSON.parse(localStorage.getItem('email-hist')||'[]');
+
+const DEMO=`Front Analytics Report - Week 18/2026\n\nTeam Performance:\n- Total conversations: 847\n- Avg first response time: 2h 14m (vs 2h 45m last week, -18%)\n- Avg resolution time: 4h 38m (vs 5h 10m, -10%)\n- CSAT: 4.3/5 (vs 4.1/5, +4.9%)\n- SLA compliance: 91% (target 90%) ✓\n\nAgent breakdown:\n- Alina F.: 180 conv, CSAT 4.5, Avg resp 1h 50m\n- Fabio K.: 210 conv, CSAT 4.4, Avg resp 2h 05m\n- Larissa A.: 120 conv, CSAT 3.9, Avg resp 3h 10m (below avg)\n- Saskia S.: 145 conv, CSAT 4.2, Avg resp 2h 30m\n- Kathrin B.: 95 conv, CSAT 4.1, Avg resp 2h 45m\n- Bastri U.: 97 conv, CSAT 4.6, Avg resp 1h 55m\n\nTop categories:\n1. Campaign orders: 234 (28%)\n2. Billing: 189 (22%)\n3. Technical OMS: 156 (18%)\n4. General: 145 (17%)\n5. Post CH AG escalations: 82 (10%)\n\nUnresolved: 23 (2.7%) — above target of 2%`;
+
+function loadDemo(){document.getElementById('reportText').value=DEMO;}
+function handleDrop(e){e.preventDefault();document.getElementById('dropZone').classList.remove('over');const f=e.dataTransfer.files[0];if(f)processFile(f);}
+function handleFile(e){if(e.target.files[0])processFile(e.target.files[0]);}
+function processFile(f){if(f.type==='application/pdf'){alert('PDF detected — open it, copy all text (Ctrl+A → Ctrl+C) and paste below.');return;}const r=new FileReader();r.onload=e=>{document.getElementById('reportText').value=e.target.result;};r.readAsText(f);}
+
+// ── Robust API caller with full error visibility ──
+function showError(msg, detail=''){
+  document.getElementById('kpiRow').innerHTML=`
+    <div style="padding:16px;grid-column:1/-1;">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--accent);margin-bottom:8px;">⚠ ${msg}</div>
+      ${detail?`<pre style="font-family:var(--mono);font-size:10px;color:var(--ink-3);white-space:pre-wrap;border:1px solid var(--border);padding:10px;background:var(--surface);max-height:160px;overflow-y:auto;">${detail}</pre>`:''}
+    </div>`;
+}
+
+function extractText(data){
+  // Handle Anthropic API response safely regardless of shape
+  if(!data) return null;
+  // API error returned (e.g. 400, 401, 529, overloaded)
+  if(data.error) return null;
+  // Normal response: data.content is an array of blocks
+  if(Array.isArray(data.content)){
+    const block = data.content.find(c=>c.type==='text');
+    return block?.text || null;
+  }
+  return null;
+}
+
+function parseJSON(raw){
+  if(!raw) return null;
+  // Strip markdown fences, leading/trailing whitespace
+  const cleaned = raw
+    .replace(/^```json\s*/i,'')
+    .replace(/^```\s*/,'')
+    .replace(/```\s*$/,'')
+    .trim();
+  // Find first { ... } block in case model added preamble
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if(start===-1||end===-1) return null;
+  return JSON.parse(cleaned.slice(start, end+1));
+}
+
+// Truncate CSV/large inputs — API has token limits
+function prepareInput(text){
+  // ~12000 chars is safe for max_tokens:1000 response headroom
+  if(text.length > 12000){
+    return text.slice(0, 12000) + '\n\n[... truncated to fit context window ...]';
+  }
+  return text;
+}
+
+async function analyse(){
+  const rawText = document.getElementById('reportText').value.trim();
+  if(!rawText){alert('Paste report data first.');return;}
+
+  const text = prepareInput(rawText);
+  const wasTruncated = rawText.length > 12000;
+
+  const btn=document.getElementById('analyseBtn');
+  btn.disabled=true;btn.textContent='Analysing...';
+  document.getElementById('results').classList.add('show');
+  document.getElementById('kpiRow').innerHTML='<div style="padding:16px;font-family:var(--mono);font-size:11px;color:var(--ink-3);">Processing'+(wasTruncated?' (input truncated to fit context)':'')+'...</div>';
+  document.getElementById('takeawayList').innerHTML='';
+  document.getElementById('actionList').innerHTML='';
+  document.getElementById('aiFull').textContent='';
+
+  let rawResponse = null;
+
+  try{
+    const data_text = await callAI(
+`You are an analyst for Livesystems AG. Analyse this Front email/support report data.
+Return ONLY a valid JSON object — no markdown fences, no explanation, just the raw JSON.
+
+Required format:
+{
+  "kpis": [{"label":"Total conversations","value":"847","delta":"+12%","trend":"up"}],
+  "takeaways": [
+    {"type":"insight","text":"..."},
+    {"type":"action","text":"..."},
+    {"type":"risk","text":"..."},
+    {"type":"trend","text":"..."}
+  ],
+  "actions": [{"text":"...","priority":"high"}],
+  "summary": "3 paragraph executive summary for a sales team leader managing the Post CH AG relationship."
+}
+
+Rules:
+- Extract 4-8 KPIs. trend is up (good) or down (bad).
+- Generate 4-6 takeaways across the 4 types
+- Generate 5-8 action items with priority: high / medium / low
+- If CSV data, parse columns and rows to extract metrics
+
+Report data:
+${text}`, 1500);
+    const rawResponse = { content: [{ type: 'text', text: data_text }] };
+    // OpenAI-compatible response shape
+    const text = data.choices?.[0]?.message?.content;
+    if(!text) throw new Error('Ollama returned no content. Is the model loaded? Run: ollama run ' + model);
+    return text;
+
+  } else {
+    // Anthropic cloud
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if(!res.ok || data.error){
+      throw new Error(data.error?.message || `HTTP ${res.status}`);
+    }
+    const block = Array.isArray(data.content) && data.content.find(c => c.type === 'text');
+    if(!block?.text) throw new Error('API returned no text content');
+    return block.text;
+  }
+}
+
+// Helper: parse JSON safely from model output (strips markdown fences)
+function safeJSON(raw){
+  if(!raw) return null;
+  const cleaned = raw.replace(/^```json\s*/i,'').replace(/^```/,'').replace(/```\s*$/,'').trim();
+  const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
+  if(s===-1||e===-1) throw new Error('No JSON object found in response');
+  return JSON.parse(cleaned.slice(s, e+1));
+}
+
+// Init on page load
+document.addEventListener('DOMContentLoaded', updateModelUI);
+// Also init immediately in case DOMContentLoaded already fired
+updateModelUI();
+
+</script>
+</body>
+</html>
