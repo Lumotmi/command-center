@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup — Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="/shared/api.js"></script>
+  <style>
+    :root{--bg:#f2f0eb;--surface:#fff;--ink:#0e0e0e;--ink-2:#3a3a3a;--ink-3:#888;--ink-4:#bbb;--accent:#d63a2f;--border:#d8d4cc;--border-dark:#0e0e0e;--ok:#2a7a2a;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+    /* topbar */
+    .topbar{position:fixed;top:0;left:0;right:0;height:52px;background:var(--ink);display:flex;align-items:center;padding:0 40px;z-index:100;}
+    .tb-logo{font-family:var(--display);font-size:22px;color:#fff;letter-spacing:.02em;text-decoration:none;}
+    .tb-logo span{color:var(--accent);}
+    .tb-step{font-family:var(--mono);font-size:10px;color:#888;margin-left:auto;letter-spacing:.08em;}
+
+    /* wizard */
+    .wizard{max-width:680px;margin:0 auto;padding:90px 40px 80px;}
+
+    /* progress */
+    .progress{display:flex;align-items:flex-start;margin-bottom:52px;gap:0;}
+    .prog-step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;}
+    .prog-step:not(:last-child)::after{content:'';position:absolute;top:13px;left:calc(50% + 14px);right:calc(-50% + 14px);height:1px;background:var(--border-dark);opacity:.15;}
+    .prog-step.done::after,.prog-step.active::after{opacity:.5;}
+    .prog-dot{width:28px;height:28px;border-radius:50%;border:1px solid var(--border-dark);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;background:var(--bg);position:relative;z-index:1;transition:all .2s;}
+    .prog-step.done .prog-dot{background:var(--ink);color:#fff;border-color:var(--ink);}
+    .prog-step.active .prog-dot{background:var(--accent);color:#fff;border-color:var(--accent);}
+    .prog-label{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-top:6px;text-align:center;}
+    .prog-step.active .prog-label,.prog-step.done .prog-label{color:var(--ink-3);}
+
+    /* panels */
+    .panel{display:none;}
+    .panel.active{display:block;}
+
+    /* step hero */
+    .step-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;}
+    .step-title{font-family:var(--display);font-size:60px;line-height:1;color:var(--ink);}
+    .step-title span{color:var(--accent);}
+    .step-sub{font-size:14px;color:var(--ink-2);line-height:1.7;margin-top:14px;font-weight:300;}
+
+    /* card */
+    .card{background:var(--surface);border:1px solid var(--border-dark);padding:24px 28px;margin-top:28px;}
+    .card-label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+
+    /* features grid */
+    .feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px;}
+    .feat{background:var(--surface);border:1px solid var(--border);padding:16px;}
+    .feat-icon{font-size:20px;margin-bottom:6px;}
+    .feat-name{font-weight:500;font-size:13px;margin-bottom:3px;}
+    .feat-desc{font-family:var(--mono);font-size:10px;color:var(--ink-3);line-height:1.5;}
+
+    /* reqs */
+    .req-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;}
+    .req-row:last-child{border-bottom:none;}
+    .req-val{color:var(--ink-3);}
+
+    /* form */
+    .field-label{font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px;margin-top:14px;}
+    .field-label:first-of-type{margin-top:0;}
+    input.field,select.field{width:100%;background:var(--surface);border:1px solid var(--border);padding:10px 14px;font-family:var(--mono);font-size:12px;color:var(--ink);outline:none;transition:border-color .15s;-webkit-appearance:none;}
+    input.field:focus,select.field:focus{border-color:var(--ink);}
+    .hint{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:5px;line-height:1.5;}
+    code{background:rgba(0,0,0,.06);padding:1px 5px;}
+
+    /* team rows */
+    .hdr-row,.team-row,.proj-row{display:grid;gap:8px;align-items:start;margin-bottom:8px;}
+    .team-row{grid-template-columns:48px 1fr 1fr;}
+    .proj-row{grid-template-columns:80px 1fr 130px;}
+    .hdr-row.team{grid-template-columns:48px 1fr 1fr;}
+    .hdr-row.proj{grid-template-columns:80px 1fr 130px;}
+    .col-hdr{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);padding-bottom:6px;}
+    .row-id{font-family:var(--mono);font-size:11px;color:var(--ink-3);padding-top:11px;}
+
+    /* provider choice */
+    .choice-row{display:flex;gap:12px;margin-bottom:20px;}
+    .choice-btn{flex:1;border:1px solid var(--border-dark);padding:18px 14px;cursor:pointer;text-align:center;background:var(--surface);transition:all .15s;}
+    .choice-btn.active{background:var(--ink);color:#fff;}
+    .ch-icon{font-size:22px;margin-bottom:6px;}
+    .ch-name{font-weight:500;font-size:13px;}
+    .ch-sub{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:3px;}
+    .choice-btn.active .ch-sub{color:#999;}
+    .sub-panel{display:none;}
+    .sub-panel.active{display:block;}
+    label.check-label{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;cursor:pointer;margin-top:12px;}
+
+    /* verify */
+    .verify-box{border:1px solid var(--border-dark);background:var(--surface);padding:32px;margin-top:20px;text-align:center;}
+    .v-icon{font-size:52px;margin-bottom:14px;}
+    .v-title{font-size:16px;font-weight:500;margin-bottom:16px;}
+    .v-title.ok{color:var(--ok);}
+    .v-title.err{color:var(--accent);}
+    .kv-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;text-align:left;}
+    .kv-row:last-child{border-bottom:none;}
+    .kv-val{color:var(--ink-3);}
+    .v-note{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:10px;}
+
+    /* done */
+    .sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px;}
+    .sum-card{background:var(--surface);border:1px solid var(--border);padding:16px 18px;}
+    .sum-label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;}
+    .sum-val{font-size:20px;font-weight:500;}
+    .sum-val.mono{font-family:var(--mono);font-size:12px;}
+    .done-links{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;}
+    .btn-primary{background:var(--ink);color:#fff;border:none;padding:14px 28px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-block;transition:opacity .15s;}
+    .btn-primary:hover{opacity:.8;}
+    .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--border-dark);padding:14px 28px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-block;transition:all .15s;}
+    .btn-ghost:hover{background:var(--ink);color:#fff;}
+    .next-steps{margin-top:28px;}
+
+    /* nav */
+    .wizard-nav{display:flex;justify-content:space-between;align-items:center;margin-top:36px;padding-top:24px;border-top:1px solid var(--border);}
+    .nav-back{background:none;border:none;font-family:var(--mono);font-size:11px;color:var(--ink-3);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:color .15s;}
+    .nav-back:hover{color:var(--ink);}
+    .nav-next{background:var(--ink);color:#fff;border:none;padding:12px 28px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:opacity .15s;}
+    .nav-next:hover{opacity:.8;}
+    .nav-next:disabled{opacity:.35;cursor:default;}
+
+    /* messages */
+    .msg{padding:10px 14px;font-family:var(--mono);font-size:11px;margin-top:14px;line-height:1.5;}
+    .msg.ok{background:rgba(42,122,42,.07);border:1px solid rgba(42,122,42,.3);color:var(--ok);}
+    .msg.err{background:rgba(214,58,47,.07);border:1px solid rgba(214,58,47,.3);color:var(--accent);}
+    .msg.info{background:rgba(0,0,0,.04);border:1px solid var(--border);color:var(--ink-3);}
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="tb-logo" href="/">LS<span>.</span>AG</a>
+  <div class="tb-step" id="stepLabel">Step 1 of 5 — Welcome</div>
+</div>
+
+<div class="wizard">
+
+  <!-- Progress -->
+  <div class="progress">
+    <div class="prog-step active" id="ps1"><div class="prog-dot" id="pd1">1</div><div class="prog-label">Welcome</div></div>
+    <div class="prog-step"        id="ps2"><div class="prog-dot" id="pd2">2</div><div class="prog-label">Workspace</div></div>
+    <div class="prog-step"        id="ps3"><div class="prog-dot" id="pd3">3</div><div class="prog-label">AI Model</div></div>
+    <div class="prog-step"        id="ps4"><div class="prog-dot" id="pd4">4</div><div class="prog-label">Verify</div></div>
+    <div class="prog-step"        id="ps5"><div class="prog-dot" id="pd5">5</div><div class="prog-label">Done</div></div>
+  </div>
+
+  <!-- ── Step 1: Welcome ─────────────────────────────────────────────────── -->
+  <div class="panel active" id="panel1">
+    <div class="step-eyebrow">Getting started · 3 min setup</div>
+    <div class="step-title">COMMAND<br><span>CENTER</span></div>
+    <div class="step-sub">Your personal workspace OS for Livesystems AG. Manages your team, projects, SPOC log, and weekly rhythm — all from one API and a set of AI-connected dashboards.</div>
+
+    <div class="feat-grid">
+      <div class="feat"><div class="feat-icon">👥</div><div class="feat-name">Team Lead</div><div class="feat-desc">Health scores, 1:1 notes, check-in generator for 6 direct reports</div></div>
+      <div class="feat"><div class="feat-icon">🗂</div><div class="feat-name">Project Hub</div><div class="feat-desc">Status boards, milestones, AI PM briefings for HubSpot / OMS / AI Tool</div></div>
+      <div class="feat"><div class="feat-icon">🏢</div><div class="feat-name">SPOC Hub</div><div class="feat-desc">Post CH AG interface, keyword intelligence, communication log</div></div>
+      <div class="feat"><div class="feat-icon">📊</div><div class="feat-name">Email Analytics</div><div class="feat-desc">Paste Front reports · AI extracts KPIs and prioritised actions</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">What this wizard configures</div>
+      <div class="req-row"><span>Team members</span><span class="req-val">names, roles → /api/team</span></div>
+      <div class="req-row"><span>Projects</span><span class="req-val">names, status → /api/projects</span></div>
+      <div class="req-row"><span>AI model</span><span class="req-val">Ollama (local) or Anthropic (cloud)</span></div>
+      <div class="req-row"><span>API health</span><span class="req-val">confirmed via GET /api/status</span></div>
+    </div>
+  </div>
+
+  <!-- ── Step 2: Workspace ───────────────────────────────────────────────── -->
+  <div class="panel" id="panel2">
+    <div class="step-eyebrow">Step 2 of 5</div>
+    <div class="step-title">YOUR<br><span>Workspace</span></div>
+    <div class="step-sub">Enter the real names and roles for your team, and confirm project names. You can edit these at any time from the dashboards.</div>
+
+    <div class="card">
+      <div class="card-label">Team — 6 direct reports</div>
+      <div class="hdr-row team">
+        <div class="col-hdr">ID</div>
+        <div class="col-hdr">Full name</div>
+        <div class="col-hdr">Role / title</div>
+      </div>
+      <div id="teamRows"><div class="msg info">Loading team data…</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Active projects</div>
+      <div class="hdr-row proj">
+        <div class="col-hdr">ID</div>
+        <div class="col-hdr">Project name</div>
+        <div class="col-hdr">Status</div>
+      </div>
+      <div id="projectRows"><div class="msg info">Loading project data…</div></div>
+    </div>
+
+    <div id="msg2"></div>
+  </div>
+
+  <!-- ── Step 3: AI Model ────────────────────────────────────────────────── -->
+  <div class="panel" id="panel3">
+    <div class="step-eyebrow">Step 3 of 5</div>
+    <div class="step-title">AI<br><span>Model</span></div>
+    <div class="step-sub">Connect an AI model for check-in generation, SPOC analysis, project briefings, and email analytics. You can change this at any time.</div>
+
+    <div class="card">
+      <div class="card-label">Choose inference provider</div>
+      <div class="choice-row">
+        <div class="choice-btn active" id="choiceLocal" onclick="setProvider('local')">
+          <div class="ch-icon">🖥</div>
+          <div class="ch-name">Ollama (local)</div>
+          <div class="ch-sub">Runs on your machine · Private · No cost</div>
+        </div>
+        <div class="choice-btn" id="choiceCloud" onclick="setProvider('cloud')">
+          <div class="ch-icon">☁️</div>
+          <div class="ch-name">Anthropic (cloud)</div>
+          <div class="ch-sub">Claude models · Requires API key</div>
+        </div>
+      </div>
+
+      <div class="sub-panel active" id="panelLocal">
+        <div class="field-label">Ollama base URL</div>
+        <input class="field" id="ollamaUrl" value="http://localhost:11434" placeholder="http://localhost:11434">
+        <div class="hint">Default if Ollama is running locally. Change if using a remote host.</div>
+        <div class="field-label" style="margin-top:14px;">Default model</div>
+        <select class="field" id="ollamaModel">
+          <option value="qwen3:14b">qwen3:14b (recommended)</option>
+          <option value="qwen3.6:latest">qwen3.6</option>
+          <option value="glm-4.7-flash:latest">GLM-4.7 Flash ⚡</option>
+          <option value="llama3.2">llama3.2</option>
+          <option value="mistral">mistral</option>
+          <option value="gemma3:12b">gemma3:12b</option>
+        </select>
+        <div class="hint">Pull first: <code>ollama pull qwen3:14b</code></div>
+      </div>
+
+      <div class="sub-panel" id="panelCloud">
+        <div class="field-label">Anthropic API key</div>
+        <input class="field" id="anthropicKey" type="password" placeholder="sk-ant-api03-…" autocomplete="off">
+        <div class="hint">Stored in browser localStorage and optionally in ~/workspace/.env for the Python agent.</div>
+        <div class="field-label" style="margin-top:14px;">Default model</div>
+        <select class="field" id="cloudModel">
+          <option value="claude-sonnet-4-20250514">claude-sonnet-4-6 (best quality)</option>
+          <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (fastest)</option>
+        </select>
+        <label class="check-label">
+          <input type="checkbox" id="saveToEnv" checked>
+          Save API key to ~/workspace/.env (for Python agent)
+        </label>
+      </div>
+    </div>
+
+    <div id="msg3"></div>
+  </div>
+
+  <!-- ── Step 4: Verify ─────────────────────────────────────────────────── -->
+  <div class="panel" id="panel4">
+    <div class="step-eyebrow">Step 4 of 5</div>
+    <div class="step-title">SYSTEM<br><span>Check</span></div>
+    <div class="step-sub">Confirming the API server is healthy and your workspace data loaded correctly.</div>
+
+    <div class="verify-box" id="verifyBox">
+      <div class="v-icon" id="vIcon">⏳</div>
+      <div id="vBody" style="font-family:var(--mono);font-size:11px;color:var(--ink-3);">Connecting to API…</div>
+    </div>
+
+    <div style="margin-top:16px;text-align:center;">
+      <button class="btn-ghost" onclick="runVerify()" style="font-size:10px;padding:10px 20px;">Re-check</button>
+    </div>
+
+    <div id="msg4"></div>
+  </div>
+
+  <!-- ── Step 5: Done ───────────────────────────────────────────────────── -->
+  <div class="panel" id="panel5">
+    <div class="step-eyebrow">Setup complete ✓</div>
+    <div class="step-title">ALL<br><span>Done</span></div>
+    <div class="step-sub">Command Center is configured and running. Your workspace OS is ready.</div>
+
+    <div class="sum-grid" id="sumGrid"></div>
+
+    <div class="done-links">
+      <a href="/" class="btn-primary">Open Command Center →</a>
+      <a href="/docs/agent-zero-setup.md" class="btn-ghost" target="_blank">Agent Zero Guide</a>
+    </div>
+
+    <div class="card next-steps">
+      <div class="card-label">Quick reference</div>
+      <div class="req-row"><span>Start server</span><span class="req-val">python3 ~/command-center/core/api/app.py</span></div>
+      <div class="req-row"><span>Dashboard</span><span class="req-val">http://localhost:5001</span></div>
+      <div class="req-row"><span>Sonnet prompt</span><span class="req-val">~/command-center/prompts/sonnet.md</span></div>
+      <div class="req-row"><span>Qwen3 prompt</span><span class="req-val">~/command-center/prompts/qwen3-14b.md</span></div>
+      <div class="req-row"><span>Update config</span><span class="req-val">PATCH http://localhost:5001/api/config</span></div>
+      <div class="req-row"><span>Schema docs</span><span class="req-val">~/command-center/config.schema.json</span></div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="wizard-nav">
+    <button class="nav-back" id="btnBack" onclick="prevStep()" style="visibility:hidden">← Back</button>
+    <button class="nav-next" id="btnNext" onclick="nextStep()">Get Started →</button>
+  </div>
+
+</div><!-- /wizard -->
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+const LABELS = ['Welcome','Workspace','AI Model','Verify','Done'];
+const NEXT_TXT = ['Get Started →','Save & Continue →','Save & Continue →','Continue →',''];
+let step = 1;
+let summary = {};
+let provider = 'local';
+let teamData = [], projectData = [];
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function updateUI() {
+  document.getElementById('stepLabel').textContent = `Step ${step} of 5 — ${LABELS[step-1]}`;
+  for (let i = 1; i <= 5; i++) {
+    const ps = document.getElementById(`ps${i}`);
+    const pd = document.getElementById(`pd${i}`);
+    ps.className = 'prog-step' + (i < step ? ' done' : i === step ? ' active' : '');
+    pd.textContent = i < step ? '✓' : String(i);
+  }
+  document.querySelector('.panel.active')?.classList.remove('active');
+  document.getElementById(`panel${step}`).classList.add('active');
+  const back = document.getElementById('btnBack');
+  const next = document.getElementById('btnNext');
+  back.style.visibility = step > 1 ? 'visible' : 'hidden';
+  next.textContent = NEXT_TXT[step - 1];
+  next.style.display = step === 5 ? 'none' : '';
+  if (step === 2) loadWorkspace();
+  if (step === 4) runVerify();
+  if (step === 5) showSummary();
+}
+
+async function nextStep() {
+  const handlers = {2: saveWorkspace, 3: saveAI};
+  const fn = handlers[step];
+  if (fn) {
+    const ok = await fn();
+    if (!ok) return;
+  }
+  step = Math.min(step + 1, 5);
+  updateUI();
+}
+
+function prevStep() {
+  step = Math.max(step - 1, 1);
+  updateUI();
+}
+
+// ── Step 2: Workspace ─────────────────────────────────────────────────────────
+async function loadWorkspace() {
+  try {
+    const [t, p] = await Promise.all([API.getTeam(), API.getProjects()]);
+    teamData = t.team || [];
+    projectData = p.projects || [];
+    renderTeam();
+    renderProjects();
+  } catch(e) {
+    document.getElementById('teamRows').innerHTML = `<div class="msg err">Cannot reach API: ${e.message}</div>`;
+    document.getElementById('projectRows').innerHTML = '';
+  }
+}
+
+function renderTeam() {
+  document.getElementById('teamRows').innerHTML = teamData.map(m => `
+    <div class="team-row">
+      <div class="row-id">${m.id}</div>
+      <input class="field" id="tn-${m.id}" value="${esc(m.name)}" placeholder="Full name">
+      <input class="field" id="tr-${m.id}" value="${esc(m.role)}" placeholder="Role / title">
+    </div>`).join('');
+}
+
+function renderProjects() {
+  document.getElementById('projectRows').innerHTML = projectData.map(p => `
+    <div class="proj-row">
+      <div class="row-id">${p.id}</div>
+      <input class="field" id="pn-${p.id}" value="${esc(p.name)}" placeholder="Project name">
+      <select class="field" id="ps-${p.id}">
+        <option value="ontrack" ${p.status==='ontrack'?'selected':''}>On track</option>
+        <option value="atrisk"  ${p.status==='atrisk' ?'selected':''}>At risk</option>
+        <option value="blocked" ${p.status==='blocked'?'selected':''}>Blocked</option>
+      </select>
+    </div>`).join('');
+}
+
+async function saveWorkspace() {
+  const msg = document.getElementById('msg2');
+  msg.innerHTML = '<div class="msg info">Saving…</div>';
+  try {
+    const ops = [
+      ...teamData.map(m => {
+        const name = document.getElementById(`tn-${m.id}`)?.value?.trim() || m.name;
+        const role = document.getElementById(`tr-${m.id}`)?.value?.trim() || m.role;
+        return API.updateMember(m.id, {name, role});
+      }),
+      ...projectData.map(p => {
+        const name   = document.getElementById(`pn-${p.id}`)?.value?.trim() || p.name;
+        const status = document.getElementById(`ps-${p.id}`)?.value || p.status;
+        return API.updateProject(p.id, {name, status});
+      }),
+    ];
+    await Promise.all(ops);
+    summary.team = teamData.length;
+    summary.projects = projectData.length;
+    msg.innerHTML = '<div class="msg ok">✓ Workspace saved</div>';
+    return true;
+  } catch(e) {
+    msg.innerHTML = `<div class="msg err">Save failed: ${e.message}</div>`;
+    return false;
+  }
+}
+
+// ── Step 3: AI Model ──────────────────────────────────────────────────────────
+function setProvider(p) {
+  provider = p;
+  document.getElementById('choiceLocal').className = 'choice-btn' + (p==='local'?' active':'');
+  document.getElementById('choiceCloud').className = 'choice-btn' + (p==='cloud'?' active':'');
+  document.getElementById('panelLocal').className  = 'sub-panel'  + (p==='local'?' active':'');
+  document.getElementById('panelCloud').className  = 'sub-panel'  + (p==='cloud'?' active':'');
+}
+
+async function saveAI() {
+  const msg = document.getElementById('msg3');
+  msg.innerHTML = '<div class="msg info">Saving…</div>';
+  try {
+    if (provider === 'local') {
+      const url   = document.getElementById('ollamaUrl').value.trim() || 'http://localhost:11434';
+      const model = document.getElementById('ollamaModel').value;
+      await API.updateConfig({ollama_base: url});
+      localStorage.setItem('ls-model', `local|${model}`);
+      summary.ai = `Ollama · ${model}`;
+      summary.aiProvider = 'local';
+    } else {
+      const key   = document.getElementById('anthropicKey').value.trim();
+      const model = document.getElementById('cloudModel').value;
+      if (!key) { msg.innerHTML = '<div class="msg err">Enter an Anthropic API key.</div>'; return false; }
+      localStorage.setItem('ls-api-key', key);
+      localStorage.setItem('ls-model', `cloud|${model}`);
+      if (document.getElementById('saveToEnv').checked) {
+        await fetch('/api/env', {
+          method: 'PATCH',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ANTHROPIC_API_KEY: key})
+        });
+      }
+      summary.ai = `Anthropic · ${model.replace('claude-','').replace(/-\d{8,}/,'')}`;
+      summary.aiProvider = 'cloud';
+    }
+    msg.innerHTML = '<div class="msg ok">✓ AI model configured</div>';
+    return true;
+  } catch(e) {
+    msg.innerHTML = `<div class="msg err">Config failed: ${e.message}</div>`;
+    return false;
+  }
+}
+
+// ── Step 4: Verify ────────────────────────────────────────────────────────────
+async function runVerify() {
+  const icon = document.getElementById('vIcon');
+  const body = document.getElementById('vBody');
+  icon.textContent = '⏳';
+  body.innerHTML = '<div style="color:var(--ink-3)">Connecting to API…</div>';
+  try {
+    const s = await API.status();
+    icon.textContent = '✅';
+    body.innerHTML = `
+      <div class="v-title ok">API is healthy</div>
+      <div class="kv-row"><span>Status</span><span class="kv-val">${s.status}</span></div>
+      <div class="kv-row"><span>Team members</span><span class="kv-val">${s.team_count}</span></div>
+      <div class="kv-row"><span>Projects</span><span class="kv-val">${s.project_count}</span></div>
+      <div class="kv-row"><span>Open tasks</span><span class="kv-val">${s.task_count}</span></div>
+      <div class="kv-row"><span>Last updated</span><span class="kv-val">${(s.last_updated||'').slice(0,10)||'—'}</span></div>`;
+    summary.apiStatus = 'healthy';
+    document.getElementById('btnNext').disabled = false;
+  } catch(e) {
+    icon.textContent = '❌';
+    body.innerHTML = `
+      <div class="v-title err">API unreachable</div>
+      <div class="v-note">${e.message}</div>
+      <div class="v-note" style="margin-top:10px;">Start the server:<br><code>python3 ~/command-center/core/api/app.py</code></div>`;
+    summary.apiStatus = 'error';
+  }
+}
+
+// ── Step 5: Summary ───────────────────────────────────────────────────────────
+function showSummary() {
+  const isOk = summary.apiStatus === 'healthy';
+  document.getElementById('sumGrid').innerHTML = `
+    <div class="sum-card"><div class="sum-label">Team</div><div class="sum-val">${summary.team || '—'} members</div></div>
+    <div class="sum-card"><div class="sum-label">Projects</div><div class="sum-val">${summary.projects || '—'} active</div></div>
+    <div class="sum-card"><div class="sum-label">AI model</div><div class="sum-val mono">${summary.ai || '—'}</div></div>
+    <div class="sum-card"><div class="sum-label">API</div><div class="sum-val" style="color:${isOk?'var(--ok)':'var(--accent)'}">${isOk ? '✓ Online' : '✗ Offline'}</div></div>`;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+updateUI();
+</script>
+</body>
+</html>

@@ -183,7 +183,7 @@ def patch_team(member_id):
     data = _load()
     for m in data["team"]:
         if m["id"].lower() == member_id.lower():
-            for k in ("health", "lastCheck", "moods"):
+            for k in ("health", "lastCheck", "moods", "name", "role", "avatar", "color"):
                 if k in body:
                     m[k] = body[k]
             if "notes" in body:
@@ -400,6 +400,55 @@ def patch_config():
     _save(data)
     _audit("PATCH", "/api/config", "updated config")
     return jsonify(cfg)
+
+
+# ── Env file management ───────────────────────────────────────────────────────
+
+ENV_FILE = Path.home() / "workspace" / ".env"
+_ENV_ALLOWED = {
+    "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID",
+    "RESEND_API_KEY", "SMTP_FROM", "SMTP_TO",
+    "ANTHROPIC_API_KEY",
+}
+
+
+@app.route("/api/env", methods=["PATCH"])
+def patch_env():
+    body = request.get_json() or {}
+    existing = {}
+    if ENV_FILE.exists():
+        for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                existing[k.strip()] = v.strip()
+    updated = []
+    for k, v in body.items():
+        if k in _ENV_ALLOWED and v:
+            existing[k] = v
+            updated.append(k)
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
+    ENV_FILE.write_text("\n".join(f"{k}={v}" for k, v in existing.items()) + "\n",
+                        encoding="utf-8")
+    _audit("PATCH", "/api/env", f"updated env keys: {updated}")
+    return jsonify({"updated": updated})
+
+
+# ── Docs ──────────────────────────────────────────────────────────────────────
+
+DOCS_DIR = Path(__file__).resolve().parent.parent.parent / "docs"
+
+
+@app.route("/docs/<path:filename>")
+def serve_doc(filename):
+    return send_from_directory(DOCS_DIR, filename, mimetype="text/plain; charset=utf-8")
+
+
+# ── Onboarding ────────────────────────────────────────────────────────────────
+
+@app.route("/onboarding")
+def onboarding():
+    return send_from_directory(DASHBOARD_DIR, "onboarding.html")
 
 
 # ── Dashboard catch-all (serves /*.html and /shared/* from dashboard/) ────────

@@ -34,9 +34,24 @@ fi
 echo "==> Installing Python packages..."
 pip3 install requests schedule python-dotenv flask --break-system-packages
 
+# 5. Start API server in background
+echo "==> Starting API server..."
+fuser -k 5001/tcp 2>/dev/null || true
+sleep 1
+python3 "$SCRIPT_DIR/core/api/app.py" > "$WORKSPACE/api.log" 2>&1 &
+API_PID=$!
+echo "    API server started (PID $API_PID, log: $WORKSPACE/api.log)"
+echo $API_PID > "$WORKSPACE/api.pid"
+sleep 3
+
+# 6. Open onboarding wizard in browser
+echo "==> Opening onboarding wizard..."
+xdg-open http://localhost:5001/onboarding 2>/dev/null \
+  || open http://localhost:5001/onboarding 2>/dev/null \
+  || echo "    Open http://localhost:5001/onboarding in your browser to complete setup."
+
 echo ""
-echo "==> Done! Next steps:"
-echo "    1. Edit $WORKSPACE/.env and add your API key (ANTHROPIC_API_KEY or OLLAMA_BASE_URL)"
-echo "    2. Start the API server:   python3 $SCRIPT_DIR/core/api/app.py"
-echo "    3. Open a dashboard:       $SCRIPT_DIR/dashboard/command-center.html"
-echo "    4. Talk to the agent:      POST http://localhost:5000/agent"
+echo "==> Setup complete!"
+echo "    Onboarding: http://localhost:5001/onboarding"
+echo "    Dashboard:  http://localhost:5001"
+echo "    API log:    $WORKSPACE/api.log"
