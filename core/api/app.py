@@ -384,5 +384,5 @@ if __name__ == "__main__":
         methods = ",".join(sorted(m for m in rule.methods if m not in ("HEAD", "OPTIONS")))
         print(f"  {methods:25} {rule.rule}")
 
-    print(f"\nStarting on http://0.0.0.0:3000\n")
-    app.run(host="0.0.0.0", port=3000, debug=False)
+    print(f"\nStarting on http://0.0.0.0:5001\n")
+    app.run(host="0.0.0.0", port=5001, debug=False)
