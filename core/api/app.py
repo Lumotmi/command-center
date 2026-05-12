@@ -177,6 +177,36 @@ def get_team():
     return jsonify({"team": _load().get("team", [])})
 
 
+_MEMBER_COLORS = ["#4d9fff","#ff6b6b","#51cf66","#fcc419","#cc5de8","#ff922b","#20c997","#f06595"]
+
+@app.route("/api/team", methods=["POST"])
+def create_team_member():
+    body = request.get_json() or {}
+    name = body.get("name", "").strip()
+    member_id = body.get("id", "").strip().lower()
+    if not name or not member_id:
+        return _err("'name' and 'id' are required")
+    data = _load()
+    if any(m["id"].lower() == member_id for m in data.get("team", [])):
+        return _err(f"Member ID '{member_id}' already exists", 409)
+    idx = len(data.get("team", []))
+    member = {
+        "id": member_id,
+        "name": name,
+        "role": body.get("role", "").strip(),
+        "avatar": member_id[:2].upper(),
+        "color": _MEMBER_COLORS[idx % len(_MEMBER_COLORS)],
+        "health": 7,
+        "lastCheck": _today(),
+        "moods": [],
+        "notes": [],
+    }
+    data.setdefault("team", []).append(member)
+    _save(data)
+    _audit("POST", "/api/team", f"created member {member_id}: {name}")
+    return jsonify(member), 201
+
+
 @app.route("/api/team/<member_id>", methods=["PATCH"])
 def patch_team(member_id):
     body = request.get_json() or {}
@@ -196,6 +226,18 @@ def patch_team(member_id):
             _audit("PATCH", f"/api/team/{member_id}", f"updated member {member_id}")
             return jsonify(m)
     return _err(f"Member '{member_id}' not found", 404)
+
+
+@app.route("/api/team/<member_id>", methods=["DELETE"])
+def delete_team_member(member_id):
+    data = _load()
+    before = len(data.get("team", []))
+    data["team"] = [m for m in data.get("team", []) if m["id"].lower() != member_id.lower()]
+    if len(data["team"]) == before:
+        return _err(f"Member '{member_id}' not found", 404)
+    _save(data)
+    _audit("DELETE", f"/api/team/{member_id}", f"deleted member {member_id}")
+    return jsonify({"deleted": True, "id": member_id})
 
 
 # ── SPOC ──────────────────────────────────────────────────────────────────────
@@ -412,7 +454,7 @@ def api_config():
     return jsonify(_load().get("config", {}))
 
 
-@app.route("/api/config", methods=["PATCH"])
+@app.route("/api/config", methods=["PATCH", "POST"])
 def patch_config():
     body = request.get_json() or {}
     data = _load()
@@ -481,6 +523,58 @@ def patch_env():
     return jsonify({"updated": updated})
 
 
+# ── Agent config ─────────────────────────────────────────────────────────────
+
+_AGENT_ENV_KEYS = {"AGENT_PROVIDER", "OLLAMA_MODEL", "ANTHROPIC_API_KEY"}
+
+
+@app.route("/api/config/agent", methods=["POST"])
+def post_config_agent():
+    body = request.get_json() or {}
+    existing = {}
+    if ENV_FILE.exists():
+        for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                existing[k.strip()] = v.strip()
+    updated = []
+    for k in _AGENT_ENV_KEYS:
+        if k in body:
+            existing[k] = body[k]
+            updated.append(k)
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
+    ENV_FILE.write_text("\n".join(f"{k}={v}" for k, v in existing.items()) + "\n",
+                        encoding="utf-8")
+    if "ollama_base" in body:
+        data = _load()
+        data.setdefault("config", {})["ollama_base"] = body["ollama_base"]
+        _save(data)
+    _audit("POST", "/api/config/agent", f"updated agent env: {updated}")
+    return jsonify({"updated": updated})
+
+
+# ── Admin ─────────────────────────────────────────────────────────────────────
+
+_RESTART_FLAG = Path.home() / "workspace" / "restart.flag"
+_API_LOG      = Path.home() / "workspace" / "api.log"
+
+
+@app.route("/api/admin/restart", methods=["POST"])
+def admin_restart():
+    _RESTART_FLAG.write_text(datetime.utcnow().isoformat() + "Z\n", encoding="utf-8")
+    _audit("POST", "/api/admin/restart", "restart flag written")
+    return jsonify({"message": "Restart flag written. Re-run setup.sh to restart."})
+
+
+@app.route("/api/admin/logs")
+def admin_logs():
+    if not _API_LOG.exists():
+        return jsonify({"lines": [], "message": "api.log not found"})
+    lines = _API_LOG.read_text(encoding="utf-8", errors="replace").splitlines()
+    return jsonify({"lines": lines[-100:], "total": len(lines)})
+
+
 # ── Docs ──────────────────────────────────────────────────────────────────────
 
 DOCS_DIR = Path(__file__).resolve().parent.parent.parent / "docs"
@@ -496,6 +590,11 @@ def serve_doc(filename):
 @app.route("/onboarding")
 def onboarding():
     return send_from_directory(DASHBOARD_DIR, "onboarding.html")
+
+
+@app.route("/settings")
+def settings():
+    return send_from_directory(DASHBOARD_DIR, "settings.html")
 
 
 # ── Dashboard catch-all (serves /*.html and /shared/* from dashboard/) ────────

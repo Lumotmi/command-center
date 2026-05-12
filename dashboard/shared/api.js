@@ -28,7 +28,9 @@ const API = {
   deleteTask: (id) => apiFetch(`/tasks/${id}`, { method: 'DELETE' }),
 
   getTeam: () => apiFetch('/team'),
+  createMember: (member) => apiFetch('/team', { method: 'POST', body: JSON.stringify(member) }),
   updateMember: (id, fields) => apiFetch(`/team/${id}`, { method: 'PATCH', body: JSON.stringify(fields) }),
+  deleteMember: (id) => apiFetch(`/team/${id}`, { method: 'DELETE' }),
 
   getSpoc: (status) => apiFetch('/spoc' + (status ? `?status=${status}` : '')),
   addSpoc: (entry) => apiFetch('/spoc', { method: 'POST', body: JSON.stringify(entry) }),

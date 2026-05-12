@@ -119,6 +119,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
 .model-indicator{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
 .model-indicator.cloud{background:var(--accent);}
 .model-indicator.local{background:#2a7a2a;}
+.tb-gear{color:var(--ink-3);font-size:15px;text-decoration:none;display:flex;align-items:center;padding:0 4px;transition:color .15s;}
+.tb-gear:hover{color:var(--ink);}
 
 </style>
 </head>
@@ -137,16 +139,21 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:10
     <div class="tb-right">
       <div class="model-sel-wrap">
         <select class="model-sel" id="modelSel" onchange="onModelChange()">
-<optgroup label="Local (Ollama)">
-            <option value="local|glm-4.7-flash:latest">GLM-4.7 Flash ⚡</option>
-            <option value="local|qwen3.6:latest">Qwen3.6</option>
+          <optgroup label="Local (Ollama)">
             <option value="local|qwen3:14b">Qwen3 14b</option>
+            <option value="local|qwen3:8b">Qwen3 8b</option>
+            <option value="local|llama3:8b">Llama3 8b</option>
+          </optgroup>
+          <optgroup label="Cloud (Anthropic)">
+            <option value="cloud|claude-sonnet-4-20250514">Claude Sonnet</option>
+            <option value="cloud|claude-haiku-4-5-20251001">Claude Haiku</option>
           </optgroup>
         </select>
         <span class="model-sel-arrow">▾</span>
       </div>
       <div class="model-indicator cloud" id="modelDot" title="Model routing indicator"></div>
       <div class="tb-date" id="topDate"></div>
+      <a href="/settings" class="tb-gear" title="Settings">⚙</a>
       <div class="dot"></div>
     </div>
   </div>

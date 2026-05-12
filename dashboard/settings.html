@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="/shared/api.js"></script>
+<style>
+:root{
+  --bg:#f2f0eb;--surface:#fff;--ink:#0e0e0e;--ink-2:#3a3a3a;
+  --ink-3:#888;--ink-4:#bbb;--accent:#d63a2f;--accent-dim:rgba(214,58,47,.1);
+  --ok:#2a7a2a;--border:#d8d4cc;--border-dark:#0e0e0e;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--display:'Bebas Neue',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:14px;}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:860px;margin:0 auto;padding:0 40px;}
+
+/* ── topbar ────────────────────────────────────────────────────────────────── */
+.topbar{border-bottom:2px solid var(--border-dark);position:sticky;top:0;z-index:100;background:var(--bg);}
+.tb{max-width:860px;margin:0 auto;padding:0 40px;display:flex;align-items:stretch;height:52px;}
+.tb-logo{font-family:var(--display);font-size:22px;letter-spacing:.04em;display:flex;align-items:center;padding-right:28px;border-right:1px solid var(--border);color:var(--ink);text-decoration:none;}
+.tb-logo span{color:var(--accent);}
+.tb-nav a{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-decoration:none;display:flex;align-items:center;padding:0 18px;border-right:1px solid var(--border);transition:color .15s;}
+.tb-nav a:hover{color:var(--ink);}
+.tb-right{display:flex;align-items:center;gap:14px;margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-3);}
+.cur-page{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);}
+
+/* ── hero ──────────────────────────────────────────────────────────────────── */
+.hero{padding:48px 0 36px;border-bottom:1px solid var(--border);}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;}
+.hero-title{font-family:var(--display);font-size:64px;line-height:.9;letter-spacing:.02em;}
+.hero-title span{color:var(--accent);}
+
+/* ── sections ──────────────────────────────────────────────────────────────── */
+.sec{padding:40px 0;border-bottom:1px solid var(--border);}
+.sec:last-child{border-bottom:none;padding-bottom:80px;}
+.sec-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px;}
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
+.sec-title{font-family:var(--display);font-size:22px;letter-spacing:.04em;margin-top:4px;}
+
+/* ── card ──────────────────────────────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border-dark);padding:24px 28px;}
+.card+.card{margin-top:12px;}
+.card-label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+
+/* ── form fields ───────────────────────────────────────────────────────────── */
+.field-label{font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px;margin-top:16px;}
+.field-label:first-of-type{margin-top:0;}
+input.field,select.field{width:100%;background:var(--bg);border:1px solid var(--border);padding:10px 14px;font-family:var(--mono);font-size:12px;color:var(--ink);outline:none;transition:border-color .15s;-webkit-appearance:none;}
+input.field:focus,select.field:focus{border-color:var(--border-dark);background:var(--surface);}
+input.field[type=password]{letter-spacing:.05em;}
+.hint{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:5px;line-height:1.5;}
+
+/* ── buttons ───────────────────────────────────────────────────────────────── */
+.btn{font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;border:none;cursor:pointer;padding:10px 20px;transition:all .15s;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover{background:#222;}
+.btn-ghost{background:transparent;border:1px solid var(--border-dark);color:var(--ink);}
+.btn-ghost:hover{background:var(--ink);color:#fff;}
+.btn-sm{padding:7px 14px;font-size:9px;}
+.btn-save{background:var(--ink);color:#fff;padding:7px 14px;font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;border:none;cursor:pointer;transition:opacity .15s;}
+.btn-save:hover{opacity:.75;}
+.btn-del{background:transparent;border:1px solid var(--border);color:var(--ink-3);padding:7px 12px;font-family:var(--mono);font-size:9px;cursor:pointer;transition:all .15s;}
+.btn-del:hover,.btn-del.armed{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-danger{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:10px 20px;font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:all .15s;}
+.btn-danger:hover{background:var(--accent);color:#fff;}
+.btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;}
+
+/* ── team ──────────────────────────────────────────────────────────────────── */
+.team-hdr,.member-row{display:grid;grid-template-columns:32px 52px 1fr 1fr 130px;align-items:center;gap:10px;}
+.team-hdr{padding:0 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.col-hdr{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);}
+.member-row{padding:8px 0;border-bottom:1px solid var(--border);}
+.member-row:last-child{border-bottom:none;}
+.m-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;color:#fff;font-weight:500;flex-shrink:0;}
+.m-id{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.05em;}
+.m-actions{display:flex;gap:6px;justify-content:flex-end;}
+.add-row{display:none;grid-template-columns:32px 52px 1fr 1fr 130px;gap:10px;align-items:end;padding:12px 0;border-top:1px solid var(--border);margin-top:4px;}
+.add-row input.field{margin-top:0;}
+.empty-state{font-family:var(--mono);font-size:11px;color:var(--ink-4);padding:16px 0;text-align:center;}
+
+/* ── agent provider toggle ─────────────────────────────────────────────────── */
+.choice-row{display:flex;gap:10px;margin-bottom:20px;}
+.choice-btn{flex:1;border:1px solid var(--border-dark);padding:16px 14px;cursor:pointer;text-align:center;background:var(--surface);transition:all .15s;}
+.choice-btn.active{background:var(--ink);color:#fff;}
+.ch-icon{font-size:20px;margin-bottom:5px;}
+.ch-name{font-weight:500;font-size:13px;}
+.ch-sub{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:3px;}
+.choice-btn.active .ch-sub{color:#999;}
+
+/* ── danger zone ───────────────────────────────────────────────────────────── */
+.danger-card{border-color:var(--accent);}
+.danger-label{color:var(--accent);}
+.log-box{display:none;margin-top:16px;background:var(--ink);color:#7eff99;font-family:var(--mono);font-size:10px;line-height:1.6;padding:16px;max-height:360px;overflow-y:auto;white-space:pre;border:1px solid var(--border-dark);}
+
+/* ── toast ─────────────────────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;padding:11px 18px;font-family:var(--mono);font-size:11px;z-index:1000;border:1px solid;animation:slideUp .2s ease;}
+.toast.ok{background:#f0faf0;border-color:var(--ok);color:var(--ok);}
+.toast.err{background:#fdf0f0;border-color:var(--accent);color:var(--accent);}
+.toast.info{background:var(--surface);border-color:var(--border-dark);color:var(--ink);}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+@media(max-width:700px){
+  .wrap,.tb{padding:0 20px;}
+  .team-hdr,.member-row,.add-row{grid-template-columns:28px 1fr 1fr 90px;gap:8px;}
+  .m-id{display:none;}
+  .choice-row{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb">
+    <a class="tb-logo" href="/">LS<span>.</span>AG</a>
+    <nav class="tb-nav" style="display:flex;align-items:stretch;">
+      <a href="/">Home</a>
+    </nav>
+    <div class="tb-right">
+      <span class="cur-page">⚙ Settings</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">System configuration</div>
+    <div class="hero-title">SETTINGS</div>
+  </div>
+
+  <!-- ── 01 ORGANISATION ──────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-hd">
+      <div><div class="sec-label">01 — Organisation</div><div class="sec-title">Workspace identity</div></div>
+    </div>
+    <div class="card">
+      <div class="field-label">Organisation name</div>
+      <input class="field" id="orgName" placeholder="Livesystems AG">
+      <div class="field-label">Subtitle</div>
+      <input class="field" id="orgSub" placeholder="Personal OS">
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm" onclick="saveOrg()">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 02 TEAM MEMBERS ──────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-hd">
+      <div><div class="sec-label">02 — Team members</div><div class="sec-title">Direct reports</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="toggleAddRow()">+ Add member</button>
+    </div>
+    <div class="card">
+      <div class="team-hdr">
+        <div></div>
+        <div class="col-hdr">ID</div>
+        <div class="col-hdr">Full name</div>
+        <div class="col-hdr">Role / title</div>
+        <div></div>
+      </div>
+      <div id="teamList"><div class="empty-state">Loading…</div></div>
+      <div class="add-row" id="addRow">
+        <div></div>
+        <input class="field" id="newId" placeholder="id" style="font-family:var(--mono);font-size:11px;">
+        <input class="field" id="newName" placeholder="Full name" oninput="autoId(this)">
+        <input class="field" id="newRole" placeholder="Role / title">
+        <div style="display:flex;gap:6px;">
+          <button class="btn-save" onclick="addMember()">Add</button>
+          <button class="btn-del" onclick="toggleAddRow()">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 03 AGENT ─────────────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-hd">
+      <div><div class="sec-label">03 — Agent</div><div class="sec-title">AI configuration</div></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Inference provider</div>
+      <div class="choice-row">
+        <div class="choice-btn active" id="choiceLocal" onclick="setAgentProvider('local')">
+          <div class="ch-icon">🖥</div>
+          <div class="ch-name">Ollama (local)</div>
+          <div class="ch-sub">Runs on your machine · Private · No cost</div>
+        </div>
+        <div class="choice-btn" id="choiceCloud" onclick="setAgentProvider('cloud')">
+          <div class="ch-icon">☁️</div>
+          <div class="ch-name">Anthropic (cloud)</div>
+          <div class="ch-sub">Claude models · Requires API key</div>
+        </div>
+      </div>
+
+      <div id="panelLocal">
+        <div class="field-label">Ollama base URL</div>
+        <input class="field" id="ollamaUrl" value="http://localhost:11434">
+        <div class="hint">Change if Ollama is running on a remote host.</div>
+        <div class="field-label" style="margin-top:14px;">Model</div>
+        <select class="field" id="agentModel">
+          <option value="qwen3:14b">qwen3:14b (recommended)</option>
+          <option value="qwen3:8b">qwen3:8b</option>
+          <option value="llama3:8b">llama3:8b</option>
+        </select>
+        <div class="hint">Pull first: <code style="background:rgba(0,0,0,.06);padding:1px 5px;">ollama pull qwen3:14b</code></div>
+      </div>
+
+      <div id="panelCloud" style="display:none;">
+        <div class="field-label">Anthropic API key</div>
+        <input class="field" id="anthropicKey" type="password" placeholder="sk-ant-api03-…" autocomplete="off">
+        <div class="hint">Saved to localStorage and ~/workspace/.env for the Python agent.</div>
+        <div class="field-label" style="margin-top:14px;">Model</div>
+        <select class="field" id="cloudModel">
+          <option value="claude-sonnet-4-20250514">claude-sonnet-4-6 (best quality)</option>
+          <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (fastest)</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm" onclick="saveAgent()">Save agent settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 04 DANGER ZONE ───────────────────────────────────────────────────── -->
+  <div class="sec">
+    <div class="sec-hd">
+      <div><div class="sec-label danger-label">04 — Danger zone</div><div class="sec-title">Destructive actions</div></div>
+    </div>
+    <div class="card danger-card">
+      <div class="btn-row" style="margin-top:0;">
+        <button class="btn-danger" onclick="resetOnboarding()">Reset onboarding</button>
+        <button class="btn-danger" onclick="restartAPI()">Restart API server</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleLogs()">View logs</button>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:12px;line-height:1.7;">
+        <b>Reset onboarding</b> — deletes all team members and redirects to the setup wizard.<br>
+        <b>Restart API</b> — writes a restart flag file; re-run <code style="background:rgba(0,0,0,.06);padding:1px 4px;">./setup.sh</code> to restart the server.<br>
+        <b>View logs</b> — shows the last 100 lines of api.log.
+      </div>
+      <div class="log-box" id="logBox"></div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<div class="toast" id="toast" style="display:none;"></div>
+
+<script>
+let teamMembers = [];
+let agentProvider = 'local';
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadOrg();
+  loadTeam();
+  loadAgentConfig();
+});
+
+// ── 01 Org ────────────────────────────────────────────────────────────────────
+async function loadOrg() {
+  try {
+    const cfg = await API.getConfig();
+    document.getElementById('orgName').value = cfg.org || '';
+    document.getElementById('orgSub').value  = cfg.org_subtitle || '';
+  } catch(e) { toast('Cannot reach API', 'err'); }
+}
+
+async function saveOrg() {
+  const org          = document.getElementById('orgName').value.trim();
+  const org_subtitle = document.getElementById('orgSub').value.trim();
+  try {
+    await apiFetch('/config', { method: 'POST', body: JSON.stringify({ org, org_subtitle }) });
+    toast('Organisation saved');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+// ── 02 Team ───────────────────────────────────────────────────────────────────
+async function loadTeam() {
+  try {
+    const data = await API.getTeam();
+    teamMembers = data.team || [];
+    renderTeam();
+  } catch(e) { document.getElementById('teamList').innerHTML = `<div class="empty-state">${e.message}</div>`; }
+}
+
+function renderTeam() {
+  const list = document.getElementById('teamList');
+  if (!teamMembers.length) {
+    list.innerHTML = '<div class="empty-state">No team members. Use + Add member to create one.</div>';
+    return;
+  }
+  list.innerHTML = teamMembers.map(m => `
+    <div class="member-row" id="mrow-${m.id}">
+      <div class="m-avatar" style="background:${m.color||'#888'}">${m.avatar||m.id.slice(0,2).toUpperCase()}</div>
+      <code class="m-id">${m.id}</code>
+      <input class="field" id="mname-${m.id}" value="${esc(m.name)}" placeholder="Full name" style="padding:7px 10px;">
+      <input class="field" id="mrole-${m.id}" value="${esc(m.role)}" placeholder="Role / title" style="padding:7px 10px;">
+      <div class="m-actions">
+        <button class="btn-save" onclick="saveMember('${m.id}')">Save</button>
+        <button class="btn-del" id="mdel-${m.id}" onclick="armDelete('${m.id}','${esc(m.name)}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+async function saveMember(id) {
+  const name = document.getElementById(`mname-${id}`)?.value.trim();
+  const role = document.getElementById(`mrole-${id}`)?.value.trim();
+  try {
+    await API.updateMember(id, { name, role });
+    const m = teamMembers.find(x => x.id === id);
+    if (m) { m.name = name; m.role = role; }
+    toast(`${name} saved`);
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function armDelete(id, name) {
+  const btn = document.getElementById(`mdel-${id}`);
+  if (btn.classList.contains('armed')) {
+    confirmDelete(id, name);
+  } else {
+    btn.textContent = 'Delete?';
+    btn.classList.add('armed');
+    setTimeout(() => { btn.textContent = '✕'; btn.classList.remove('armed'); }, 3000);
+  }
+}
+
+async function confirmDelete(id, name) {
+  try {
+    await API.deleteMember(id);
+    teamMembers = teamMembers.filter(m => m.id !== id);
+    renderTeam();
+    toast(`${name} removed`);
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function toggleAddRow() {
+  const row = document.getElementById('addRow');
+  row.style.display = row.style.display === 'grid' ? 'none' : 'grid';
+  if (row.style.display === 'grid') document.getElementById('newName').focus();
+}
+
+function autoId(input) {
+  const id = input.value.trim().split(/\s+/).map(w => w[0] || '').join('').toLowerCase().slice(0, 4);
+  document.getElementById('newId').value = id;
+}
+
+async function addMember() {
+  const name = document.getElementById('newName').value.trim();
+  const role = document.getElementById('newRole').value.trim();
+  const id   = document.getElementById('newId').value.trim().toLowerCase();
+  if (!name || !id) return toast('Name and ID are required', 'err');
+  try {
+    const member = await API.createMember({ name, role, id });
+    teamMembers.push(member);
+    renderTeam();
+    ['newName','newRole','newId'].forEach(x => document.getElementById(x).value = '');
+    document.getElementById('addRow').style.display = 'none';
+    toast(`${name} added`);
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+// ── 03 Agent ──────────────────────────────────────────────────────────────────
+async function loadAgentConfig() {
+  try {
+    const cfg = await API.getConfig();
+    document.getElementById('ollamaUrl').value = cfg.ollama_base || 'http://localhost:11434';
+  } catch(e) {}
+  const stored = localStorage.getItem('ls-model') || 'local|qwen3:14b';
+  const [type, model] = stored.split('|');
+  setAgentProvider(type || 'local');
+  if (type === 'local') {
+    const sel = document.getElementById('agentModel');
+    if ([...sel.options].some(o => o.value === model)) sel.value = model;
+  } else {
+    const sel = document.getElementById('cloudModel');
+    if ([...sel.options].some(o => o.value === model)) sel.value = model;
+    document.getElementById('anthropicKey').value = localStorage.getItem('ls-api-key') || '';
+  }
+}
+
+function setAgentProvider(p) {
+  agentProvider = p;
+  document.getElementById('choiceLocal').className = 'choice-btn' + (p === 'local' ? ' active' : '');
+  document.getElementById('choiceCloud').className = 'choice-btn' + (p === 'cloud' ? ' active' : '');
+  document.getElementById('panelLocal').style.display  = p === 'local'  ? '' : 'none';
+  document.getElementById('panelCloud').style.display  = p === 'cloud'  ? '' : 'none';
+}
+
+async function saveAgent() {
+  const ollamaBase = document.getElementById('ollamaUrl').value.trim() || 'http://localhost:11434';
+  const body = { ollama_base: ollamaBase };
+  try {
+    if (agentProvider === 'local') {
+      const model = document.getElementById('agentModel').value;
+      body.AGENT_PROVIDER = 'ollama';
+      body.OLLAMA_MODEL   = model;
+      localStorage.setItem('ls-model', `local|${model}`);
+    } else {
+      const key   = document.getElementById('anthropicKey').value.trim();
+      const model = document.getElementById('cloudModel').value;
+      body.AGENT_PROVIDER    = 'anthropic';
+      if (key) { body.ANTHROPIC_API_KEY = key; localStorage.setItem('ls-api-key', key); }
+      localStorage.setItem('ls-model', `cloud|${model}`);
+    }
+    await apiFetch('/config/agent', { method: 'POST', body: JSON.stringify(body) });
+    toast('Agent settings saved');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+// ── 04 Danger zone ────────────────────────────────────────────────────────────
+async function resetOnboarding() {
+  if (!confirm('Delete ALL team members and redirect to the setup wizard?\n\nThis cannot be undone.')) return;
+  try {
+    const data = await API.getTeam();
+    await Promise.all((data.team || []).map(m => API.deleteMember(m.id)));
+    window.location.href = '/onboarding';
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function restartAPI() {
+  if (!confirm('Write restart flag?\n\nRe-run ./setup.sh to restart the server.')) return;
+  try {
+    const r = await apiFetch('/admin/restart', { method: 'POST' });
+    toast(r.message || 'Restart flag written', 'info');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function toggleLogs() {
+  const box = document.getElementById('logBox');
+  if (box.style.display !== 'none') { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  box.textContent = 'Loading…';
+  try {
+    const data = await apiFetch('/admin/logs');
+    box.textContent = (data.lines || []).join('\n') || '(empty log)';
+    box.scrollTop = box.scrollHeight;
+  } catch(e) { box.textContent = `Error: ${e.message}`; }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type}`;
+  el.style.display = '';
+  clearTimeout(el._tid);
+  el._tid = setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+</script>
+</body>
+</html>
