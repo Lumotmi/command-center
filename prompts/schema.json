@@ -1,0 +1,180 @@
+{
+  "version": "1.0",
+  "base_url": "http://localhost:5001",
+  "agent_endpoint": "/api/agent",
+  "actions": [
+    {
+      "name": "add_task",
+      "description": "Add a new task to the workspace",
+      "parameters": {
+        "text": { "type": "string", "required": true, "description": "Task description" },
+        "tag": { "type": "string", "required": false, "default": "General", "enum": ["SPOC","Team","Project","CRM","General"] },
+        "priority": { "type": "string", "required": false, "default": "medium", "enum": ["high","medium","low"] }
+      },
+      "example": { "action": "add_task", "text": "Call Thomas about OMS API", "tag": "SPOC", "priority": "high" }
+    },
+    {
+      "name": "complete_task",
+      "description": "Mark a task as done",
+      "parameters": {
+        "task_id": { "type": "integer", "required": false, "description": "Task ID" },
+        "text_match": { "type": "string", "required": false, "description": "Partial text match if ID unknown" }
+      },
+      "example": { "action": "complete_task", "text_match": "Call Thomas" }
+    },
+    {
+      "name": "delete_task",
+      "description": "Delete a task permanently",
+      "parameters": {
+        "task_id": { "type": "integer", "required": true }
+      },
+      "example": { "action": "delete_task", "task_id": 3 }
+    },
+    {
+      "name": "list_tasks",
+      "description": "List open or all tasks",
+      "parameters": {
+        "show_done": { "type": "boolean", "required": false, "default": false }
+      },
+      "example": { "action": "list_tasks" }
+    },
+    {
+      "name": "update_health",
+      "description": "Update a team member health score and optionally add a note",
+      "parameters": {
+        "member": { "type": "string", "required": true, "description": "Member name or ID (lk, sa, mb, rf, tm, dk)" },
+        "health": { "type": "integer", "required": true, "description": "Score 1-10" },
+        "note": { "type": "string", "required": false, "description": "Optional observation note" }
+      },
+      "example": { "action": "update_health", "member": "tm", "health": 4, "note": "Missed standup again, follow up urgently" }
+    },
+    {
+      "name": "add_member_note",
+      "description": "Add a 1:1 or observation note to a team member without changing health score",
+      "parameters": {
+        "member": { "type": "string", "required": true },
+        "note": { "type": "string", "required": true }
+      },
+      "example": { "action": "add_member_note", "member": "mb", "note": "Discussed workload in 1:1 - seems better this week" }
+    },
+    {
+      "name": "get_team_status",
+      "description": "Get full team health summary",
+      "parameters": {},
+      "example": { "action": "get_team_status" }
+    },
+    {
+      "name": "add_spoc_log",
+      "description": "Log a Post CH AG communication or decision",
+      "parameters": {
+        "title": { "type": "string", "required": true },
+        "body": { "type": "string", "required": true },
+        "status": { "type": "string", "required": false, "default": "open", "enum": ["open","urgent","done"] },
+        "keywords": { "type": "array", "required": false, "description": "List of keyword strings" }
+      },
+      "example": { "action": "add_spoc_log", "title": "Q2 budget confirmed", "body": "Post CH AG confirmed 2.5M CHF for Q2 OOH campaigns", "status": "open", "keywords": ["budget","Q2","OOH","2.5M"] }
+    },
+    {
+      "name": "update_spoc_status",
+      "description": "Update status of a SPOC log entry",
+      "parameters": {
+        "entry_id": { "type": "integer", "required": true },
+        "status": { "type": "string", "required": true, "enum": ["open","urgent","done"] }
+      },
+      "example": { "action": "update_spoc_status", "entry_id": 2, "status": "done" }
+    },
+    {
+      "name": "get_spoc_summary",
+      "description": "Get all open and urgent SPOC items",
+      "parameters": {},
+      "example": { "action": "get_spoc_summary" }
+    },
+    {
+      "name": "update_project",
+      "description": "Update a project status, progress percentage, or add a PM note",
+      "parameters": {
+        "project_id": { "type": "string", "required": true, "enum": ["hubspot","oms","aiplan"] },
+        "status": { "type": "string", "required": false, "enum": ["ontrack","atrisk","blocked","active","done"] },
+        "progress": { "type": "integer", "required": false, "description": "0-100" },
+        "note": { "type": "string", "required": false }
+      },
+      "example": { "action": "update_project", "project_id": "oms", "status": "atrisk", "progress": 40, "note": "API docs received from Thomas, unblocked" }
+    },
+    {
+      "name": "update_milestone",
+      "description": "Update a milestone status within a project",
+      "parameters": {
+        "project_id": { "type": "string", "required": true },
+        "milestone_text": { "type": "string", "required": true, "description": "Partial text match" },
+        "status": { "type": "string", "required": true, "enum": ["done","active","pending","blocked"] }
+      },
+      "example": { "action": "update_milestone", "project_id": "hubspot", "milestone_text": "HubSpot configuration", "status": "done" }
+    },
+    {
+      "name": "get_project_summary",
+      "description": "Get status of all projects",
+      "parameters": {},
+      "example": { "action": "get_project_summary" }
+    },
+    {
+      "name": "send_telegram",
+      "description": "Send an immediate Telegram message to the operator",
+      "parameters": {
+        "message": { "type": "string", "required": true }
+      },
+      "example": { "action": "send_telegram", "message": "Don't forget the Post CH AG call at 3pm" }
+    },
+    {
+      "name": "send_email",
+      "description": "Send an email notification via Resend",
+      "parameters": {
+        "subject": { "type": "string", "required": true },
+        "body": { "type": "string", "required": true }
+      },
+      "example": { "action": "send_email", "subject": "Weekly summary", "body": "Here are your open items..." }
+    },
+    {
+      "name": "schedule_reminder",
+      "description": "Schedule a future reminder via Telegram or email",
+      "parameters": {
+        "message": { "type": "string", "required": true },
+        "send_at": { "type": "string", "required": true, "description": "ISO datetime e.g. 2026-05-13T09:00:00" },
+        "channel": { "type": "string", "required": false, "default": "telegram", "enum": ["telegram","email","both"] }
+      },
+      "example": { "action": "schedule_reminder", "message": "OMS review meeting prep", "send_at": "2026-05-13T09:00:00", "channel": "telegram" }
+    },
+    {
+      "name": "get_daily_briefing",
+      "description": "Get a full status summary — urgent tasks, SPOC items, blocked projects, team alerts",
+      "parameters": {},
+      "example": { "action": "get_daily_briefing" }
+    },
+    {
+      "name": "save_weekly_entry",
+      "description": "Save a Friday lookback or Monday outlook to the archive",
+      "parameters": {
+        "entry_type": { "type": "string", "required": true, "enum": ["friday","monday"] },
+        "content": { "type": "string", "required": true },
+        "week": { "type": "string", "required": false }
+      },
+      "example": { "action": "save_weekly_entry", "entry_type": "friday", "content": "Good week. Closed OMS blocker. Team morale improving except Tanja." }
+    },
+    {
+      "name": "get_status",
+      "description": "Full workspace overview — combines briefing, projects, and team in one call",
+      "parameters": {},
+      "example": { "action": "get_status" }
+    }
+  ],
+  "sensitive_routing": {
+    "rule": "If the user mentions salary, contract values, Post CH AG acquisition details, personnel termination, or legal matters — do NOT process via this tool. Tell the user to use Lumo AI instead.",
+    "keywords": ["salary","contract value","acquisition","termination","legal","confidential","NDA","severance"]
+  },
+  "context": {
+    "operator": "Senior manager at Livesystems AG",
+    "company": "Livesystems AG — subsidiary of Post CH AG (parent company acquired Livesystems)",
+    "roles": ["SPOC between Livesystems AG and Post CH AG", "Team lead for 6 people (1 Sales Ops + 5 Sales Coordination)", "Project Manager for HubSpot CRM, OMS, AI Planning Tool OOH"],
+    "team_ids": ["lk","sa","mb","rf","tm","dk"],
+    "project_ids": ["hubspot","oms","aiplan"]
+  }
+}
